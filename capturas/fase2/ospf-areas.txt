@@ -1,0 +1,21 @@
+DIST-SW1#show ip ospf interface brief
+Interface     PID   Area                     IP Address/Mask          Cost  State  Nbrs F/C
+Lo0             1   1                    10.254.0.21/255.255.255.255   1     WAIT  0/0
+Gig1/1/1        1   1                     10.255.3.2/255.255.255.252   1    POINT  0/0
+Vlan            1   1                        10.0.20.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                        10.0.30.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                        10.0.40.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                        10.0.50.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                        10.0.60.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                       10.0.100.2/255.255.255.0   1       DR  0/0
+Vlan            1   1                        10.0.10.2/255.255.255.0   1       DR  0/0
+Gig1/1/2        1   1                    10.255.3.10/255.255.255.252   1    POINT  0/0
+
+CORE-SW2#show ip ospf interface brief
+Interface     PID   Area                     IP Address/Mask          Cost  State  Nbrs F/C
+Lo0             1   0                    10.254.0.12/255.255.255.255   1     WAIT  0/0
+Gig1/0/1        1   0                    10.255.1.14/255.255.255.252   100  POINT  0/0
+Gig1/0/2        1   0                     10.255.1.6/255.255.255.252   1    POINT  0/0
+Po10            1   0                     10.255.2.2/255.255.255.252   1       DR  0/0
+Gig1/1/1        1   1                    10.255.3.13/255.255.255.252   1    POINT  0/0
+Gig1/1/2        1   1                     10.255.3.9/255.255.255.252   1    POINT  0/0

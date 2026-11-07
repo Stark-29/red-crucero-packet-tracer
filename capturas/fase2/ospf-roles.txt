@@ -1,0 +1,23 @@
+CORE-SW1#show ip ospf
+ Routing Process "ospf 1" with ID 10.254.0.11
+ Supports only single TOS(TOS0) routes
+ Supports opaque LSA
+ It is an area border router
+ SPF schedule delay 5 secs, Hold time between two SPFs 10 secs
+ Minimum LSA interval 5 secs. Minimum LSA arrival 1 secs
+ Number of external LSA 3. Checksum Sum 0x02142c
+ Number of opaque AS LSA 0. Checksum Sum 0x000000
+ Number of DCbitless external and opaque AS LSA 0
+ Number of DoNotAge external and opaque AS LSA 0
+ Number of areas in this router is 2. 2 normal 0 stub 0 nssa
+ 
+CORE-SW2#show ip ospf border-routers
+OSPF Process 1 internal Routing Table
+
+Codes: i - Intra-area route, I - Inter-area route
+
+i 10.254.0.1 [1] via 10.255.1.5, GigabitEthernet1/0/2, ASBR, Area 0, SPF 1
+i 10.254.0.11 [1] via 10.255.2.1, Port-channel10, ABR, Area 0, SPF 1
+i 10.254.0.2 [100] via 10.255.1.13, GigabitEthernet1/0/1, ASBR, Area 0, SPF 100
+i 10.254.0.11 [2] via 10.255.3.14, GigabitEthernet1/1/1, ABR, Area 1, SPF 2
+i 10.254.0.11 [2] via 10.255.3.10, GigabitEthernet1/1/2, ABR, Area 1, SPF 2

@@ -1,0 +1,24 @@
+EDGE-R1#show ip ospf neighbor
+
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+10.254.0.11       0   FULL/  -        00:00:38    10.255.1.2      GigabitEthernet0/0/1
+10.254.0.12       0   FULL/  -        00:00:31    10.255.1.6      GigabitEthernet0/0/2
+
+CORE-SW1#show ip ospf neighbor 
+
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+10.254.0.12       1   FULL/DR         00:00:30    10.255.2.2      Port-channel10
+10.254.0.2        0   FULL/  -        00:00:37    10.255.1.9      GigabitEthernet1/0/2
+10.254.0.1        0   FULL/  -        00:00:37    10.255.1.1      GigabitEthernet1/0/1
+10.254.0.22       0   FULL/  -        00:00:37    10.255.3.6      GigabitEthernet1/1/2
+10.254.0.21       0   FULL/  -        00:00:37    10.255.3.2      GigabitEthernet1/1/1
+
+DIST-SW1#show ip ospf neighbor 
+
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+10.254.0.12       0   FULL/  -        00:00:37    10.255.3.9      GigabitEthernet1/1/2
+10.254.0.11       0   FULL/  -        00:00:31    10.255.3.1      GigabitEthernet1/1/1
+

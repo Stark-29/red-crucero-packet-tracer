@@ -1,0 +1,45 @@
+DIST-SW1#show interfaces trunk
+Port        Mode         Encapsulation  Status        Native vlan
+Po1         on           802.1q         trunking      99
+Gig1/0/1    on           802.1q         trunking      99
+Gig1/0/2    on           802.1q         trunking      99
+Gig1/0/3    on           802.1q         trunking      99
+Gig1/0/4    on           802.1q         trunking      99
+
+Port        Vlans allowed on trunk
+Po1         10,20,30,40,50,60,99-100
+Gig1/0/1    10,20,30,40,50,60,99-100
+Gig1/0/2    10,20,30,40,50,60,99-100
+Gig1/0/3    10,20,30,40,50,60,99-100
+Gig1/0/4    10,20,30,40,50,60,99-100
+
+Port        Vlans allowed and active in management domain
+Po1         10,20,30,40,50,60,99,100
+Gig1/0/1    10,20,30,40,50,60,99,100
+Gig1/0/2    10,20,30,40,50,60,99,100
+Gig1/0/3    10,20,30,40,50,60,99,100
+Gig1/0/4    10,20,30,40,50,60,99,100
+
+Port        Vlans in spanning tree forwarding state and not pruned
+Po1         10,20,30,40,50,60,100
+Gig1/0/1    10,20,30,40,50,60,99,100
+Gig1/0/2    10,20,30,40,50,60,99,100
+Gig1/0/3    10,20,30,40,50,60,99,100
+Gig1/0/4    10,20,30,40,50,60,99,100
+
+ACC-CREW#show interfaces trunk 
+Port        Mode         Encapsulation  Status        Native vlan
+Gig0/1      on           802.1q         trunking      99
+Gig0/2      on           802.1q         trunking      99
+
+Port        Vlans allowed on trunk
+Gig0/1      10,20,30,40,50,60,99-100
+Gig0/2      10,20,30,40,50,60,99-100
+
+Port        Vlans allowed and active in management domain
+Gig0/1      10,20,30,40,50,60,99,100
+Gig0/2      10,20,30,40,50,60,99,100
+
+Port        Vlans in spanning tree forwarding state and not pruned
+Gig0/1      10,30,50,100
+Gig0/2      20,40,60,99

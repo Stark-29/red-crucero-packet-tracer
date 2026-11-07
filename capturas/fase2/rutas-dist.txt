@@ -1,0 +1,24 @@
+DIST-SW1#show ip route ospf
+     10.0.0.0/8 is variably subnetted, 29 subnets, 3 masks
+O IA    10.254.0.11 [110/2] via 10.255.3.1, 06:20:20, GigabitEthernet1/1/1
+O IA    10.254.0.12 [110/2] via 10.255.3.9, 04:19:50, GigabitEthernet1/1/2
+O       10.254.0.22 [110/3] via 10.255.3.1, 05:02:47, GigabitEthernet1/1/1
+                    [110/3] via 10.255.3.9, 05:02:47, GigabitEthernet1/1/2
+O IA    10.255.1.0 [110/2] via 10.255.3.1, 06:20:20, GigabitEthernet1/1/1
+O IA    10.255.1.4 [110/2] via 10.255.3.9, 04:19:50, GigabitEthernet1/1/2
+O IA    10.255.1.8 [110/101] via 10.255.3.1, 06:20:20, GigabitEthernet1/1/1
+O IA    10.255.1.12 [110/101] via 10.255.3.9, 04:19:50, GigabitEthernet1/1/2
+O IA    10.255.2.0 [110/2] via 10.255.3.1, 05:02:47, GigabitEthernet1/1/1
+                   [110/2] via 10.255.3.9, 04:19:50, GigabitEthernet1/1/2
+O       10.255.3.4 [110/2] via 10.255.3.1, 06:20:20, GigabitEthernet1/1/1
+O       10.255.3.12 [110/2] via 10.255.3.9, 05:02:47, GigabitEthernet1/1/2
+O*E2 0.0.0.0/0 [110/1] via 10.255.3.1, 02:18:58, GigabitEthernet1/1/1
+
+CORE-SW1#show ip route 0.0.0.0
+Routing entry for 0.0.0.0/0, supernet
+Known via "ospf 1", distance 110, metric 1, candidate default path
+  Tag 1, type extern 2, forward metric 1
+  Last update from 10.255.1.1 on GigabitEthernet1/0/1, 04:26:31 ago
+  Routing Descriptor Blocks:
+  * 10.255.1.1, from 10.254.0.1, 04:26:31 ago, via GigabitEthernet1/0/1
+      Route metric is 1, traffic share count is 1

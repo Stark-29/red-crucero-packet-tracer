@@ -1,0 +1,8 @@
+ACC-CREW#show port-security 
+Secure Port MaxSecureAddr CurrentAddr SecurityViolation Security Action
+               (Count)       (Count)        (Count)
+--------------------------------------------------------------------
+        Fa0/1        2          1                 0         Restrict
+        Fa0/2        2          1                 0         Restrict
+        Fa0/3        1          1                 0         Restrict
+----------------------------------------------------------------------

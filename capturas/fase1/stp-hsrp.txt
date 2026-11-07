@@ -1,0 +1,81 @@
+DIST-SW1#show spanning-tree summary
+Switch is in rapid-pvst mode
+Root bridge for: CREW ADMIN-IT SERVERS MGMT
+Extended system ID           is enabled
+Portfast Default             is disabled
+PortFast BPDU Guard Default  is disabled
+Portfast BPDU Filter Default is disabled
+Loopguard Default            is disabled
+EtherChannel misconfig guard is disabled
+UplinkFast                   is disabled
+BackboneFast                 is disabled
+Configured Pathcost method used is short
+
+Name                   Blocking Listening Learning Forwarding STP Active
+---------------------- -------- --------- -------- ---------- ----------
+VLAN0001                     5         0        0          4          9
+VLAN0010                     4         0        0          5          9
+VLAN0020                     4         0        0          5          9
+VLAN0030                     4         0        0          5          9
+VLAN0040                     4         0        0          5          9
+VLAN0050                     4         0        0          5          9
+VLAN0060                     4         0        0          5          9
+VLAN0099                     5         0        0          4          9
+VLAN0100                     4         0        0          5          9
+VLAN0999                     5         0        0          4          9
+
+---------------------- -------- --------- -------- ---------- ----------
+10 vlans                    43         0        0         47         90
+
+DIST-SW1#show standby brief
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   110 P Active   local           10.0.10.3       10.0.10.1      
+Vl20        20   100   Standby  10.0.20.3       local           10.0.20.1      
+Vl30        30   110 P Active   local           10.0.30.3       10.0.30.1      
+Vl40        40   100   Standby  10.0.40.3       local           10.0.40.1      
+Vl50        50   110 P Active   local           10.0.50.3       10.0.50.1      
+Vl60        60   100   Standby  10.0.60.3       local           10.0.60.1      
+Vl100       100  110 P Active   local           10.0.100.3      10.0.100.1     
+
+DIST-SW2#show spanning-tree summary
+Switch is in rapid-pvst mode
+Root bridge for: GUESTS VOICE BRIDGE-OPS
+Extended system ID           is enabled
+Portfast Default             is disabled
+PortFast BPDU Guard Default  is disabled
+Portfast BPDU Filter Default is disabled
+Loopguard Default            is disabled
+EtherChannel misconfig guard is disabled
+UplinkFast                   is disabled
+BackboneFast                 is disabled
+Configured Pathcost method used is short
+
+Name                   Blocking Listening Learning Forwarding STP Active
+---------------------- -------- --------- -------- ---------- ----------
+VLAN0001                     5         0        0          4          9
+VLAN0010                     4         0        0          5          9
+VLAN0020                     4         0        0          5          9
+VLAN0030                     4         0        0          5          9
+VLAN0040                     4         0        0          5          9
+VLAN0050                     4         0        0          5          9
+VLAN0060                     4         0        0          5          9
+VLAN0099                     4         0        0          5          9
+VLAN0100                     4         0        0          5          9
+VLAN0999                     6         0        0          3          9
+
+---------------------- -------- --------- -------- ---------- ----------
+10 vlans                    43         0        0         47         90
+
+DIST-SW2#show standby brief 
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   100   Standby  10.0.10.2       local           10.0.10.1      
+Vl20        20   110 P Active   local           10.0.20.2       10.0.20.1      
+Vl30        30   100   Standby  10.0.30.2       local           10.0.30.1      
+Vl40        40   110 P Active   local           10.0.40.2       10.0.40.1      
+Vl50        50   100   Standby  10.0.50.2       local           10.0.50.1      
+Vl60        60   110 P Active   local           10.0.60.2       10.0.60.1      
+Vl100       100  100   Standby  10.0.100.2      local           10.0.100.1     
