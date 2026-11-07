@@ -145,7 +145,7 @@ Vl100       100  110 P Active   local           10.0.100.3      10.0.100.1
 ```
 DIST-SW2#show spanning-tree summary
 Switch is in rapid-pvst mode
-Root bridge for: GUESTS VOICE BRIDGE-OPS NATIVE UNUSED
+Root bridge for: GUESTS VOICE BRIDGE-OPS
 ```
 
 Las VLANs NATIVE y UNUSED no tienen prioridad configurada y la raíz se decide por la MAC más baja; no afecta, porque no tienen SVI ni usuarios.
