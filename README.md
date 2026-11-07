@@ -1,8 +1,8 @@
-# Red jerárquica de un buque crucero (Packet Tracer)
+# MS Vandamme: red jerárquica de un buque crucero (Packet Tracer)
 
-Diseño e implementación de la red de un crucero ficticio, Van Damme, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
+Diseño e implementación de la red de un crucero ficticio **MS Vandamme**, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
 
-> **Estado:** en desarrollo. Las Fases 0 y 1 están terminadas y verificadas; la Fase 2 está en curso. Ver [Estado del proyecto](#estado-del-proyecto).
+> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) es la siguiente. Ver [Estado del proyecto](#estado-del-proyecto).
 
 Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus básico con dos routers y un solo switch, que se conserva en [`v1-campus-basico/`](./v1-campus-basico). Las limitaciones de esa primera versión motivaron este rediseño (ver [De v1 a v2](#de-v1-a-v2)).
 
@@ -10,7 +10,7 @@ Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus b
 
 ## Escenario
 
-La red debe dar servicio a tres grupos con necesidades distintas: la **tripulación** (CREW), los **pasajeros** (GUESTS) y los sistemas del **puente de mando** (BRIDGE-OPS), además de un área de TI, voz IP y servidores. El enlace a Internet es satelital, por lo que se simulan **dos proveedores** (SAT-A y SAT-B) con un enlace principal y uno de respaldo.
+La red debe dar servicio a tres grupos con necesidades distintas: la **tripulación** (CREW), los **pasajeros** (GUESTS) y los sistemas del **puente de mando** (BRIDGE-OPS), además de un área de TI, voz IP y servidores. El enlace a Internet es satelital, por lo que se simulan **dos proveedores** (SAT-A y SAT-B) con redundancia entre ambos.
 
 ## Topología
 
@@ -29,7 +29,11 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRP v2 · OSPFv2 multiárea · NAT/PAT · ACLs · SSH · port-security · BPDU Guard · DHCP · telefonía IP con Cisco CME
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard
+
+**Planificado (Fase 3):** DHCP central · ACLs entre VLANs · SSH · telefonía IP con Cisco CME.
+
+**Herramienta:** Cisco Packet Tracer 9.0.0.0810. El archivo `.pkt` puede no abrirse en versiones anteriores.
 
 ---
 
@@ -39,7 +43,7 @@ VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) ·
 |---|---|---|
 | 0 | Diseño, plan de direccionamiento y topología | ✅ Terminada |
 | 1 | Capa 2 y gateways: VLANs, STP, EtherChannel, SVIs y HSRP | ✅ Terminada y verificada |
-| 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | 🔄 OSPF funcionando; Edge/NAT en curso |
+| 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
 | 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | ⏳ Pendiente |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
 | 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
@@ -63,6 +67,8 @@ En cada VLAN: IP virtual (VIP) `.1`, DIST-SW1 `.2` y DIST-SW2 `.3`. El número d
 | 100 | MGMT | 10.0.100.0/24 | DIST-SW1 |
 | 99 | NATIVE | sin IP | — |
 | 999 | UNUSED | sin IP | — |
+
+**Gestión (VLAN 100):** gateway virtual 10.0.100.1, DIST-SW1 .2, DIST-SW2 .3, ACC-CREW .11, ACC-GUEST .12, ACC-BRIDGE .13, SW-DC .20.
 
 ### Enlaces punto a punto (/30)
 
@@ -104,12 +110,13 @@ Se usan rangos de documentación (RFC 5737).
 - **Reparto de carga por VLAN.** HSRP no balancea dentro de un mismo grupo, así que DIST-SW1 es activo en las VLANs 10, 30, 50 y 100, y DIST-SW2 en las 20, 40 y 60.
 - **Root de STP alineado con el HSRP activo** en cada VLAN, para que el tráfico no tome un camino más largo del necesario.
 - **VTP en modo transparente.** Las VLANs se crean en cada switch en lugar de propagarse, para evitar que un switch con un número de revisión alto sobrescriba la base de VLANs de toda la red.
-- **Puertos sin uso en una VLAN dedicada (999, UNUSED)**, apagados y fuera de todos los trunks. La VLAN 99 se reserva como nativa de los trunks, sin puertos de acceso.
+- **Puertos sin uso apagados.** En los switches de acceso, el Data Center y los DIST, los puertos libres van en `shutdown` dentro de la VLAN 999 (UNUSED), que no se permite en ningún trunk; la VLAN 99 se reserva como nativa. En los CORE y en los puertos de fibra libres solo se aplica `shutdown`, porque ahí no se conectan equipos de usuario.
 - **EtherChannel de capa 2 entre los DIST** (trunk para las VLANs y los Hellos de HSRP) y **de capa 3 entre los CORE** (enlace enrutado /30).
 - **OSPF multiárea:** área 0 para Core y Edge, área 1 para Distribution. Los CORE son los únicos ABR.
 - **`passive-interface` en todas las SVIs** de los DIST, para que no se formen vecindades OSPF a través de las VLANs (ni entre los dos DIST ni con equipos conectados por error).
 - **Router-id fijado manualmente** con la loopback de cada equipo, para que sea predecible y quede documentado.
 - **Seguridad en los puertos de acceso:** PortFast, BPDU Guard y port-security con MAC sticky y `violation restrict` (máximo 2 MAC en los puertos con teléfono y PC).
+-  **Ruta por defecto estática flotante en los CORE como respaldo.** Cada CORE tiene `ip route 0.0.0.0 0.0.0.0 <IP de EDGE-R2> 200` (CORE-SW1 → 10.255.1.9, CORE-SW2 → 10.255.1.13). Con distancia administrativa 200 solo entra cuando OSPF (110) no instala la ruta por defecto, y se verificó en la prueba de failover (ver problema 7).
 
 ---
 
@@ -143,11 +150,9 @@ Root bridge for: GUESTS VOICE BRIDGE-OPS NATIVE UNUSED
 
 Las VLANs NATIVE y UNUSED no tienen prioridad configurada y la raíz se decide por la MAC más baja; no afecta, porque no tienen SVI ni usuarios.
 
-### Fase 2: OSPF
+### Fase 2: OSPF y salida a Internet
 
-*(Pendiente: insertar capturas de `show ip ospf neighbor` en un CORE y un DIST, `show ip route` en un DIST y `show ip ospf` mostrando los roles ABR/ASBR.)*
-
-### Pruebas de failover
+Capturas en [`capturas/fase2/`](./capturas/fase2): vecinos OSPF, áreas por interfaz, roles ABR/ASBR, rutas de un DIST y tabla NAT de ambos EDGE.
 
 ### Prueba de failover del enlace satelital principal
 | Paso | Resultado |
@@ -156,7 +161,7 @@ Las VLANs NATIVE y UNUSED no tienen prioridad configurada y la raíz se decide p
 | `shutdown` en EDGE-R1 Gi0/0/0 (hacia SAT-A) | Unos 10 paquetes con TTL 123 (ya por EDGE-R2) y luego pérdida total |
 | Causa | CORE-SW1 no instalaba la ruta por defecto (ver problema 7) |
 | Tras la ruta estática flotante en CORE-SW1 | Ping recuperado |
-| `no shutdown` en EDGE-R1 | *(completar: ruta OSPF vuelve a CORE-SW1, el ping sigue)* |
+| `no shutdown` en EDGE-R1 | La ruta OSPF (`O*E2` vía 10.255.1.1) vuelve a CORE-SW1 y la estática flotante queda en reserva |
 
 ---
 
@@ -185,6 +190,7 @@ Las VLANs NATIVE y UNUSED no tienen prioridad configurada y la raíz se decide p
 ### 5. Diferencias entre Packet Tracer y un IOS real
 - `ip ospf network point-to-point` **no está disponible** en interfaces Port-channel. El enlace Core–Core opera como broadcast con elección de DR/BDR; la adyacencia llega a FULL igualmente.
 - `ip ospf <pid> area <x>` **no se acepta** en los puertos SFP de fibra. En esos enlaces se usó el comando `network` con IP exacta; en el resto de interfaces se usa el método por interfaz.
+- `default-information originate` **no admite `metric` ni `metric-type`** en los ISR 4331 y 2911 de Packet Tracer. La preferencia por EDGE-R1 se simuló con `ip ospf cost` en los enlaces hacia EDGE-R2 (ver problema 7).
 
 ---
 
@@ -235,7 +241,6 @@ En la v2, el DHCP pasará a un servidor central, las ACLs se aplicarán en las S
 ├── README.md
 ├── docs/
 │   ├── topologia.png
-│   ├── direccionamiento.md
 │   └── cableado.md
 ├── v1-campus-basico/
 ├── configs/          (running-config de cada equipo, sin secretos)
