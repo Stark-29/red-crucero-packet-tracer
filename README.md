@@ -271,4 +271,4 @@ En la v2, el DHCP pasará a un servidor central, las ACLs se aplicarán en las S
 ## Autor
 
 **Robert Duran** — Ingeniero electrónico, CCNA 200-301
-[LinkedIn](https://www.linkedin.com/in/robert-duran-electronic) · [Credly](https://www.credly.com/earner/earned/badge/bd075323-7943-4c86-960e-0b7b7d7216fe)
+[LinkedIn](https://www.linkedin.com/in/robert-duran-electronic) · [Credly](https://www.credly.com/badges/bd075323-7943-4c86-960e-0b7b7d7216fe/public_url)
