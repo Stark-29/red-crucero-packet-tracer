@@ -29,7 +29,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard.
 
 **Planificado (Fase 3):** DHCP central · ACLs entre VLANs · SSH · telefonía IP con Cisco CME.
 
@@ -150,11 +150,25 @@ Root bridge for: GUESTS VOICE BRIDGE-OPS
 
 Las VLANs NATIVE y UNUSED no tienen prioridad configurada y la raíz se decide por la MAC más baja; no afecta, porque no tienen SVI ni usuarios.
 
+Evidencia completa en [`capturas/fase1/`](./capturas/fase1): [`vlans.txt`](./capturas/fase1/vlans.txt), [`stp-hsrp.txt`](./capturas/fase1/stp-hsrp.txt), [`trunks.txt`](./capturas/fase1/trunks.txt), [`etherchannel-l2.txt`](./capturas/fase1/etherchannel-l2.txt) y [`port-security.txt`](./capturas/fase1/port-security.txt).
+
 ### Fase 2: OSPF y salida a Internet
 
-Capturas en [`capturas/fase2/`](./capturas/fase2): vecinos OSPF, áreas por interfaz, roles ABR/ASBR, rutas de un DIST y tabla NAT de ambos EDGE.
+Evidencia en [`capturas/fase2/`](./capturas/fase2):
+
+- [`ospf-neighbors.txt`](./capturas/fase2/ospf-neighbors.txt): vecinos OSPF en CORE-SW1, DIST-SW1 y EDGE-R1.
+- [`ospf-areas.txt`](./capturas/fase2/ospf-areas.txt): área de cada interfaz.
+- [`ospf-roles.txt`](./capturas/fase2/ospf-roles.txt): CORE-SW1 como ABR y EDGE-R1 y EDGE-R2 como ASBR.
+- [`etherchannel-l3.txt`](./capturas/fase2/etherchannel-l3.txt): Port-channel 10 entre los CORE.
+- [`rutas-dist.txt`](./capturas/fase2/rutas-dist.txt): rutas OSPF y ruta por defecto en DIST-SW1.
+- [`nat.txt`](./capturas/fase2/nat.txt): traducciones NAT en ambos EDGE.
+
+**Traza en operación normal** (`tracert` desde PC-GUEST-2): DIST-SW2 → CORE-SW2 → EDGE-R1 → SAT-A → servidor.
+
+![Traza hacia Internet](./capturas/fase2/tracert.png)
 
 ### Prueba de failover del enlace satelital principal
+
 | Paso | Resultado |
 |---|---|
 | `ping 203.0.113.10 -t` desde PC de la VLAN 10 | Responde con TTL 124 (salida por EDGE-R1) |
@@ -162,6 +176,10 @@ Capturas en [`capturas/fase2/`](./capturas/fase2): vecinos OSPF, áreas por inte
 | Causa | CORE-SW1 no instalaba la ruta por defecto (ver problema 7) |
 | Tras la ruta estática flotante en CORE-SW1 | Ping recuperado |
 | `no shutdown` en EDGE-R1 | La ruta OSPF (`O*E2` vía 10.255.1.1) vuelve a CORE-SW1 y la estática flotante queda en reserva |
+
+**Repetición tras agregar las rutas estáticas flotantes** (ping continuo desde PC-GUEST-2, VLAN 20): al apagar la salida de EDGE-R1 hacia SAT-A se pierden unos 4 paquetes y el tráfico pasa a EDGE-R2. El TTL de las respuestas baja de 124 a 123 porque el camino por SAT-B tiene un salto más.
+
+![Ping durante el failover](./capturas/fase2/failover-ping.png)
 
 ---
 
