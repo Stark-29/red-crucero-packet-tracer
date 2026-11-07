@@ -1,0 +1,107 @@
+!
+version 15.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname EDGE-R2
+!
+!
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description ROUTER-ID OSPF
+ ip address 10.254.0.2 255.255.255.255
+!
+interface GigabitEthernet0/0/0
+ description WAN to SAT-B Gi0/1 198.51.100.4/30
+ ip address 198.51.100.6 255.255.255.252
+ ip nat outside
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0/1
+ description P2P to CORE-SW2 Gi1/0/1 10.255.1.12/30
+ ip address 10.255.1.13 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf cost 100
+ ip ospf priority 1
+ ip ospf 1 area 0
+ ip nat inside
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0/2
+ description P2P to CORE-SW1 Gi1/0/2 10.255.1.8/30
+ ip address 10.255.1.9 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf cost 100
+ ip ospf priority 1
+ ip ospf 1 area 0
+ ip nat inside
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 10.254.0.2
+ log-adjacency-changes
+ default-information originate
+!
+ip nat inside source list ACL-NAT interface GigabitEthernet0/0/0 overload
+ip classless
+ip route 0.0.0.0 0.0.0.0 198.51.100.5 
+!
+ip flow-export version 9
+!
+!
+ip access-list standard ACL-NAT
+ permit 10.0.0.0 0.0.255.255
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end
+

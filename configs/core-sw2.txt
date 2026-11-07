@@ -1,0 +1,226 @@
+!
+version 16.3.2
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname CORE-SW2
+!
+!
+no profinet
+!
+!
+!
+!
+!
+!
+ip cef
+ip routing
+!
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description ROUTER-ID OSPF
+ ip address 10.254.0.12 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Port-channel10
+ description P2P LACP to CORE-SW1 Po10 10.255.2.0/30
+ no switchport
+ ip address 10.255.2.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface GigabitEthernet1/0/1
+ description P2P to EDGE-R2 Gi0/0/1 10.255.1.12/30
+ no switchport
+ ip address 10.255.1.14 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf cost 100
+ ip ospf priority 1
+ ip ospf 1 area 0
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet1/0/2
+ description P2P to EDGE-R1 Gi0/0/2 10.255.1.4/30
+ no switchport
+ ip address 10.255.1.6 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
+ ip ospf 1 area 0
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet1/0/3
+ description LACP Po10 to CORE-SW1 Gi1/0/3-4
+ no switchport
+ no ip address
+ channel-group 10 mode active
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet1/0/4
+ description LACP Po10 to CORE-SW1 Gi1/0/3-4
+ no switchport
+ no ip address
+ channel-group 10 mode active
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet1/0/5
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/6
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/7
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/8
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/9
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/10
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/11
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/12
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/13
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/14
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/15
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/16
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/17
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/18
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/19
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/20
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/21
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/22
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/23
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/0/24
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/1/1
+ description P2P to DIST-SW2 Gi1/1/1 10.255.3.12/30
+ no switchport
+ ip address 10.255.3.13 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
+!
+interface GigabitEthernet1/1/2
+ description P2P to DIST-SW1 Gi1/1/2 10.255.3.8/30
+ no switchport
+ ip address 10.255.3.9 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
+!
+interface GigabitEthernet1/1/3
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/1/4
+ description UNUSED - shutdown
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 10.254.0.12
+ log-adjacency-changes
+ network 10.255.3.13 0.0.0.0 area 1
+ network 10.255.3.9 0.0.0.0 area 1
+!
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.255.1.13 200
+!
+ip flow-export version 9
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+!
+end
+

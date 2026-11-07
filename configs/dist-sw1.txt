@@ -1,0 +1,359 @@
+!
+version 16.3.2
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname DIST-SW1
+!
+!
+no profinet
+!
+!
+!
+!
+!
+!
+no ip cef
+ip routing
+!
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+vtp mode transparent
+!
+spanning-tree mode rapid-pvst
+spanning-tree vlan 10,30,50,100 priority 24576
+spanning-tree vlan 20,40,60 priority 28672
+!
+!
+!
+!
+!
+!
+vlan 10
+ name CREW
+!
+vlan 20
+ name GUESTS
+!
+vlan 30
+ name ADMIN-IT
+!
+vlan 40
+ name VOICE
+!
+vlan 50
+ name SERVERS
+!
+vlan 60
+ name BRIDGE-OPS
+!
+vlan 99
+ name NATIVE
+!
+vlan 100
+ name MGMT
+!
+vlan 999
+ name UNUSED
+!
+interface Loopback0
+ description ROUTER-ID OSPF
+ ip address 10.254.0.21 255.255.255.255
+ ip ospf 1 area 1
+!
+interface Port-channel1
+ description TRUNK LACP to DIST-SW2 Po1
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface GigabitEthernet1/0/1
+ description TRUNK to ACC-CREW Gi0/1
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/2
+ description TRUNK to ACC-GUEST Gi0/1
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/3
+ description TRUNK to ACC-BRIDGE Gi0/1
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/4
+ description TRUNK to SW-DC Gi0/1
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/5
+ description LACP Po1 to DIST-SW2 Gi1/0/5-6
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+ switchport nonegotiate
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/6
+ description LACP Po1 to DIST-SW2 Gi1/0/5-6
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ switchport mode trunk
+ switchport nonegotiate
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/7
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/8
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/9
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/10
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/11
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/12
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/13
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/14
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/15
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/16
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/17
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/18
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/19
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/20
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/21
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/22
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/23
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/0/24
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet1/1/1
+ description P2P to CORE-SW1 Gi1/1/1 10.255.3.0/30
+ no switchport
+ ip address 10.255.3.2 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
+!
+interface GigabitEthernet1/1/2
+ description P2P to CORE-SW2 Gi1/1/2 10.255.3.8/30
+ no switchport
+ ip address 10.255.3.10 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
+!
+interface GigabitEthernet1/1/3
+ description UNUSED - shutdown
+ shutdown
+!
+interface GigabitEthernet1/1/4
+ description UNUSED - shutdown
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan10
+ description GW CREW (HSRP VIP 10.0.10.1)
+ mac-address 0060.2fbd.ab01
+ ip address 10.0.10.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 10 ip 10.0.10.1
+ standby 10 priority 110
+ standby 10 preempt
+!
+interface Vlan20
+ description GW GUESTS (HSRP VIP 10.0.20.1)
+ mac-address 0060.2fbd.ab02
+ ip address 10.0.20.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 20 ip 10.0.20.1
+!
+interface Vlan30
+ description GW ADMIN-IT (HSRP VIP 10.0.30.1)
+ mac-address 0060.2fbd.ab03
+ ip address 10.0.30.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 30 ip 10.0.30.1
+ standby 30 priority 110
+ standby 30 preempt
+!
+interface Vlan40
+ description GW VOICE (HSRP VIP 10.0.40.1)
+ mac-address 0060.2fbd.ab04
+ ip address 10.0.40.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 40 ip 10.0.40.1
+!
+interface Vlan50
+ description GW SERVERS (HSRP VIP 10.0.50.1)
+ mac-address 0060.2fbd.ab05
+ ip address 10.0.50.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 50 ip 10.0.50.1
+ standby 50 priority 110
+ standby 50 preempt
+!
+interface Vlan60
+ description GW BRIDGE-OPS (HSRP VIP 10.0.60.1)
+ mac-address 0060.2fbd.ab06
+ ip address 10.0.60.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 60 ip 10.0.60.1
+!
+interface Vlan100
+ description GW MGMT (HSRP VIP 10.0.100.1)
+ mac-address 0060.2fbd.ab07
+ ip address 10.0.100.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 100 ip 10.0.100.1
+ standby 100 priority 110
+ standby 100 preempt
+!
+router ospf 1
+ router-id 10.254.0.21
+ log-adjacency-changes
+ passive-interface Vlan10
+ passive-interface Vlan20
+ passive-interface Vlan30
+ passive-interface Vlan40
+ passive-interface Vlan50
+ passive-interface Vlan60
+ passive-interface Vlan100
+ network 10.255.3.2 0.0.0.0 area 1
+ network 10.255.3.10 0.0.0.0 area 1
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+!
+end
+
