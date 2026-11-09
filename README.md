@@ -2,7 +2,7 @@
 
 Diseño e implementación de la red de un crucero ficticio **MS Vandamme**, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
 
-> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) es la siguiente. Ver [Estado del proyecto](#estado-del-proyecto).
+> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso. Ver [Estado del proyecto](#estado-del-proyecto).
 
 Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus básico con dos routers y un solo switch, que se conserva en [`v1-campus-basico/`](./v1-campus-basico). Las limitaciones de esa primera versión motivaron este rediseño (ver [De v1 a v2](#de-v1-a-v2)).
 
@@ -29,9 +29,9 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard.
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH
 
-**Planificado (Fase 3):** DHCP central · ACLs entre VLANs · SSH · telefonía IP con Cisco CME.
+**Planificado (Fase 3):** ACLs entre VLANs · telefonía IP con Cisco CME
 
 **Herramienta:** Cisco Packet Tracer 9.0.0.0810. El archivo `.pkt` puede no abrirse en versiones anteriores.
 
@@ -44,7 +44,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 | 0 | Diseño, plan de direccionamiento y topología | ✅ Terminada |
 | 1 | Capa 2 y gateways: VLANs, STP, EtherChannel, SVIs y HSRP | ✅ Terminada y verificada |
 | 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
-| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | ⏳ Pendiente |
+| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: SSH, DHCP y snooping listos; ACLs y voz IP pendientes |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
 | 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
 
