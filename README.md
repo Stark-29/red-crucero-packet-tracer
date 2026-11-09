@@ -116,7 +116,9 @@ Se usan rangos de documentación (RFC 5737).
 - **`passive-interface` en todas las SVIs** de los DIST, para que no se formen vecindades OSPF a través de las VLANs (ni entre los dos DIST ni con equipos conectados por error).
 - **Router-id fijado manualmente** con la loopback de cada equipo, para que sea predecible y quede documentado.
 - **Seguridad en los puertos de acceso:** PortFast, BPDU Guard y port-security con MAC sticky y `violation restrict` (máximo 2 MAC en los puertos con teléfono y PC).
--  **Ruta por defecto estática flotante en los CORE como respaldo.** Cada CORE tiene `ip route 0.0.0.0 0.0.0.0 <IP de EDGE-R2> 200` (CORE-SW1 → 10.255.1.9, CORE-SW2 → 10.255.1.13). Con distancia administrativa 200 solo entra cuando OSPF (110) no instala la ruta por defecto, y se verificó en la prueba de failover (ver problema 7).
+- **Ruta por defecto estática flotante en los CORE como respaldo.** Cada CORE tiene `ip route 0.0.0.0 0.0.0.0 <IP de EDGE-R2> 200` (CORE-SW1 → 10.255.1.9, CORE-SW2 → 10.255.1.13). Con distancia administrativa 200 solo entra cuando OSPF (110) no instala la ruta por defecto, y se verificó en la prueba de failover (ver problema 7).
+- **Acceso de gestión seguro.** SSH versión 2 con usuarios locales (`admin`, nivel 15, y `operador`, nivel 1), dominio `ship.local`, contraseñas cifradas, banner de advertencia y bloqueo tras intentos fallidos. Se aplicó a los 11 equipos del barco; SAT-A, SAT-B y SW-ISP simulan el Internet del proveedor y no llevan configuración de acceso.
+- **Credenciales de laboratorio.** Enable y los usuarios usan la misma contraseña (`lab123`) en todos los equipos, solo para este ejercicio. En un entorno real cada equipo tendría credenciales distintas gestionadas de forma centralizada (AAA/RADIUS). Durante el desarrollo, el tiempo de inactividad de consola y vty está desactivado (`exec-timeout 0`) por comodidad.
 
 ---
 
@@ -181,6 +183,10 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 
 ![Ping durante el failover](./capturas/fase2/failover-ping.png)
 
+**Acceso SSH** (banner de advertencia y sesión iniciada en DIST-SW2, sin restricciones por ahora): evidencia en [`ssh.txt`](./capturas/fase3/ssh.txt) y en la captura siguiente. Pendiente: restringir SSH a la VLAN 30 al terminar las ACLs.
+
+![Acceso SSH a DIST-SW2 sin restricción](./capturas/fase3/ssh-sin-restriccion.png)
+
 ---
 
 ## Problemas encontrados y cómo se resolvieron
@@ -209,6 +215,7 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 - `ip ospf network point-to-point` **no está disponible** en interfaces Port-channel. El enlace Core–Core opera como broadcast con elección de DR/BDR; la adyacencia llega a FULL igualmente.
 - `ip ospf <pid> area <x>` **no se acepta** en los puertos SFP de fibra. En esos enlaces se usó el comando `network` con IP exacta; en el resto de interfaces se usa el método por interfaz.
 - `default-information originate` **no admite `metric` ni `metric-type`** en los ISR 4331 y 2911 de Packet Tracer. La preferencia por EDGE-R1 se simuló con `ip ospf cost` en los enlaces hacia EDGE-R2 (ver problema 7).
+- `login block-for` **no está disponible en los switches de capa 2** (ACC y SW-DC) de Packet Tracer; el bloqueo tras intentos fallidos solo se configuró en los equipos de capa 3.
 
 ---
 
