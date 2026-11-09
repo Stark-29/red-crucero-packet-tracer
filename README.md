@@ -70,6 +70,16 @@ En cada VLAN: IP virtual (VIP) `.1`, DIST-SW1 `.2` y DIST-SW2 `.3`. El número d
 
 **Gestión (VLAN 100):** gateway virtual 10.0.100.1, DIST-SW1 .2, DIST-SW2 .3, ACC-CREW .11, ACC-GUEST .12, ACC-BRIDGE .13, SW-DC .20.
 
+**DHCP central (SRV-INFRA, 10.0.50.10):** un pool por VLAN de usuarios, con rango desde `.11` (las direcciones `.1` a `.10` quedan reservadas para el VIP, los DIST y equipos fijos).
+
+| VLAN | Pool | Gateway | Rango |
+|---|---|---|---|
+| 10 | VLAN10_CREW | 10.0.10.1 | .11 a .110 |
+| 20 | VLAN20_GUESTS | 10.0.20.1 | .11 a .110 |
+| 30 | VLAN30_ADMIN | 10.0.30.1 | .11 a .110 |
+| 40 | VLAN40_VOICE | 10.0.40.1 | .11 a .110 (TFTP: 10.0.50.5) |
+| 60 | VLAN60_BRIDGE | 10.0.60.1 | .11 a .110 |
+
 ### Enlaces punto a punto (/30)
 
 | Enlace | Red |
@@ -115,10 +125,12 @@ Se usan rangos de documentación (RFC 5737).
 - **OSPF multiárea:** área 0 para Core y Edge, área 1 para Distribution. Los CORE son los únicos ABR.
 - **`passive-interface` en todas las SVIs** de los DIST, para que no se formen vecindades OSPF a través de las VLANs (ni entre los dos DIST ni con equipos conectados por error).
 - **Router-id fijado manualmente** con la loopback de cada equipo, para que sea predecible y quede documentado.
-- **Seguridad en los puertos de acceso:** PortFast, BPDU Guard y port-security con MAC sticky y `violation restrict` (máximo 2 MAC en los puertos con teléfono y PC).
+- **Seguridad en los puertos de acceso:** PortFast, BPDU Guard y port-security con MAC sticky y `violation restrict` (máximo 3 MAC en los puertos con teléfono y PC).
 - **Ruta por defecto estática flotante en los CORE como respaldo.** Cada CORE tiene `ip route 0.0.0.0 0.0.0.0 <IP de EDGE-R2> 200` (CORE-SW1 → 10.255.1.9, CORE-SW2 → 10.255.1.13). Con distancia administrativa 200 solo entra cuando OSPF (110) no instala la ruta por defecto, y se verificó en la prueba de failover (ver problema 7).
 - **Acceso de gestión seguro.** SSH versión 2 con usuarios locales (`admin`, nivel 15, y `operador`, nivel 1), dominio `ship.local`, contraseñas cifradas, banner de advertencia y bloqueo tras intentos fallidos. Se aplicó a los 11 equipos del barco; SAT-A, SAT-B y SW-ISP simulan el Internet del proveedor y no llevan configuración de acceso.
 - **Credenciales de laboratorio.** Enable y los usuarios usan la misma contraseña (`lab123`) en todos los equipos, solo para este ejercicio. En un entorno real cada equipo tendría credenciales distintas gestionadas de forma centralizada (AAA/RADIUS). Durante el desarrollo, el tiempo de inactividad de consola y vty está desactivado (`exec-timeout 0`) por comodidad.
+- **DHCP centralizado con relay.** SRV-INFRA entrega las direcciones de todas las VLANs de usuarios mediante `ip helper-address` en las SVIs de **ambos DIST**, de modo que si uno cae, el otro sigue reenviando. Resuelve el problema de pools duplicados de la v1.
+- **DHCP snooping en los switches de acceso**, solo en las VLANs con clientes (ACC-CREW: 10 y 40, ACC-GUEST: 20 y 40, ACC-BRIDGE: 60 y 40). Los uplinks a los DIST son puertos confiables y la opción 82 está desactivada.
 
 ---
 
@@ -187,6 +199,20 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 
 ![Acceso SSH a DIST-SW2 sin restricción](./capturas/fase3/ssh-sin-restriccion.png)
 
+### Fase 3: DHCP snooping
+
+**Prueba del servidor DHCP falso** (un servidor no autorizado en un puerto de usuario de ACC-CREW, VLAN 10):
+
+| Condición | Resultado |
+|---|---|
+| Snooping desactivado | La PC toma 10.0.10.200 con gateway 10.0.10.99, DNS 1.1.1.1 y servidor DHCP 10.0.10.250 (el falso) |
+| Snooping activo | En tres renovaciones seguidas la PC toma 10.0.10.11 o .12 con gateway 10.0.10.1 y servidor DHCP 10.0.50.10 (SRV-INFRA) |
+
+![Sin protección](./capturas/fase3/dhcp-antes.png)
+![Con DHCP snooping](./capturas/fase3/dhcp-despues.png)
+
+Configuración y puertos confiables en [`capturas/fase3/dhcp-snooping.txt`](./capturas/fase3/dhcp-snooping.txt).
+
 ---
 
 ## Problemas encontrados y cómo se resolvieron
@@ -217,8 +243,6 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 - `default-information originate` **no admite `metric` ni `metric-type`** en los ISR 4331 y 2911 de Packet Tracer. La preferencia por EDGE-R1 se simuló con `ip ospf cost` en los enlaces hacia EDGE-R2 (ver problema 7).
 - `login block-for` **no está disponible en los switches de capa 2** (ACC y SW-DC) de Packet Tracer; el bloqueo tras intentos fallidos solo se configuró en los equipos de capa 3.
 
----
-
 ### 6. Redes de usuarios no alcanzables desde el Edge (SVIs fuera de OSPF)
 **Síntoma:** un PC de la VLAN 20 con IP fija llegaba a su gateway (10.0.20.3, DIST-SW2) pero no a Internet. El `tracert` hacia el servidor se cortaba en el segundo salto. Desde EDGE-R1, el ping a SAT-A sí funcionaba.
 **Diagnóstico:** en EDGE-R1, `show ip route` mostraba rutas `O IA` hacia las loopbacks y los enlaces /30 de los DIST, pero **ninguna hacia las redes 10.0.x.0/24 de las VLANs**. Los paquetes de ida llegaban a Internet, pero las respuestas no tenían ruta de vuelta.
@@ -237,6 +261,23 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 **Causa:** no determinada con certeza; consistente con un manejo inconsistente de rutas externas E2 por parte de Packet Tracer en los switches de capa 3.
 **Solución:** ruta estática flotante en CORE-SW1 hacia EDGE-R2: `ip route 0.0.0.0 0.0.0.0 10.255.1.9 200`. Con distancia administrativa 200 solo entra cuando OSPF (110) no tiene ruta por defecto. Tras aplicarla, el ping se recuperó. También se agregó ruta estática en CORE-SW2 por simetría.
 **Lección:** el failover hay que probarlo desde más de una VLAN y revisando la tabla de rutas de cada equipo del camino. Un ping exitoso desde la VLAN 20 no habría revelado el problema, porque su tráfico no pasaba por CORE-SW1.
+  
+### 8. Servidores sin conectividad: puertos de SW-DC sin configurar
+**Síntoma:** tras configurar el relay DHCP, los PCs no recibían IP y no había ping al servidor SRV-INFRA.
+**Causa:** los puertos de SW-DC hacia los servidores y R-VOZ no tenían configuración de acceso (VLAN 50).
+**Solución:** `switchport mode access` y VLAN 50 en Fa0/1 a Fa0/3, más PortFast, BPDU Guard y port-security. Tras eso, el DHCP funcionó.
+**Lección:** comprobar primero la conectividad al servidor antes de depurar el DHCP.
+
+### 9. Port-security con máximo 2 genera violaciones en puertos con teléfono y PC
+**Síntoma:** al pedir IP desde las PCs conectadas detrás de un teléfono, ACC-CREW mostró `PSECURE_VIOLATION` en Fa0/1 y Fa0/2, aunque ambos puertos tenían `maximum 2` y las PCs recibían IP.
+**Diagnóstico:** `show port-security interface` indicaba 2 MAC aprendidas y un contador de violaciones creciente. La MAC que provocaba el aviso no coincidía con la de la PC ni con la guardada del teléfono. Con `violation restrict` el puerto seguía funcionando.
+**Causa:** no determinada con certeza; es consistente con un comportamiento de Packet Tracer al contar MAC en puertos con VLAN de voz.
+**Solución:** subir el máximo a 3, borrar las MAC aprendidas y reiniciar el puerto. Los avisos desaparecieron.
+
+### 10. El servidor DHCP falso no entregaba su pool
+**Síntoma:** con el snooping desactivado, la PC no tomaba IP del servidor falso aunque su pool estaba configurado.
+**Causa probable:** el servidor traía un pool por defecto (`serverPool`) en la misma red 10.0.10.0/24, que interfería con el pool de prueba y no se puede eliminar.
+**Solución:** cambiar el rango de `serverPool` a otra red. Después, la PC tomó la IP del servidor falso.
 
 ## De v1 a v2
 
