@@ -2,7 +2,7 @@
 
 Diseño e implementación de la red de un crucero ficticio **MS Vandamme**, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
 
-> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso. Ver [Estado del proyecto](#estado-del-proyecto).
+> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso: DHCP, snooping, SSH y ACLs listos; faltan el SSH restringido y la voz IP. Ver [Estado del proyecto](#estado-del-proyecto).
 
 Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus básico con dos routers y un solo switch, que se conserva en [`v1-campus-basico/`](./v1-campus-basico). Las limitaciones de esa primera versión motivaron este rediseño (ver [De v1 a v2](#de-v1-a-v2)).
 
@@ -29,11 +29,11 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs
 
-**Planificado (Fase 3):** ACLs entre VLANs · telefonía IP con Cisco CME
+**Planificado (Fase 3):** SSH restringido a la VLAN de administración · telefonía IP con Cisco CME
 
-**Herramienta:** Cisco Packet Tracer 9.0.0.0810. El archivo `.pkt` puede no abrirse en versiones anteriores.
+**Herramienta:** Cisco Packet Tracer 9.0.1 (las Fases 1 y 2 se construyeron en 9.0.0.0810; ver problema 11). El archivo `.pkt` puede no abrirse en versiones anteriores.
 
 ---
 
@@ -44,7 +44,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 | 0 | Diseño, plan de direccionamiento y topología | ✅ Terminada |
 | 1 | Capa 2 y gateways: VLANs, STP, EtherChannel, SVIs y HSRP | ✅ Terminada y verificada |
 | 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
-| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: SSH, DHCP y snooping listos; ACLs y voz IP pendientes |
+| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: DHCP, snooping, SSH y ACLs listos; SSH restringido y voz IP pendientes |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
 | 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
 
@@ -131,6 +131,8 @@ Se usan rangos de documentación (RFC 5737).
 - **Credenciales de laboratorio.** Enable y los usuarios usan la misma contraseña (`lab123`) en todos los equipos, solo para este ejercicio. En un entorno real cada equipo tendría credenciales distintas gestionadas de forma centralizada (AAA/RADIUS). Durante el desarrollo, el tiempo de inactividad de consola y vty está desactivado (`exec-timeout 0`) por comodidad.
 - **DHCP centralizado con relay.** SRV-INFRA entrega las direcciones de todas las VLANs de usuarios mediante `ip helper-address` en las SVIs de **ambos DIST**, de modo que si uno cae, el otro sigue reenviando. Resuelve el problema de pools duplicados de la v1.
 - **DHCP snooping en los switches de acceso**, solo en las VLANs con clientes (ACC-CREW: 10 y 40, ACC-GUEST: 20 y 40, ACC-BRIDGE: 60 y 40). Los uplinks a los DIST son puertos confiables y la opción 82 está desactivada.
+- **ACLs de entrada en las SVIs, idénticas en ambos DIST.** Cada VLAN de usuarios tiene su ACL nombrada (`ACL-GUESTS-IN`, `ACL-CREW-IN`, `ACL-VOICE-IN`, `ACL-BRIDGE-IN`) aplicada en la SVI de los dos DIST, para que el filtrado sea el mismo si uno cae. GUESTS solo llega a DNS e Internet; CREW, a DNS, SRV-WEB e Internet; BRIDGE-OPS, a DNS y SRV-WEB, sin Internet; VOICE, solo a R-VOZ (TCP 2000) y TFTP. ADMIN-IT (VLAN 30) y las VLANs 50 y 100 no llevan ACL.
+- **Las ACLs son sin estado, así que se permiten explícitamente** DHCP, HSRP (UDP 1985 a 224.0.0.2 y 224.0.0.102), ping al VIP y a los DIST, y las respuestas hacia ADMIN-IT (`echo-reply` y `tcp established`) para que TI pueda hacer ping y SSH hacia las demás VLANs. En GUESTS y CREW se bloquea `10.0.0.0/8` antes de permitir Internet.
 
 ---
 
@@ -213,6 +215,40 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 
 Configuración y puertos confiables en [`capturas/fase3/dhcp-snooping.txt`](./capturas/fase3/dhcp-snooping.txt).
 
+### Fase 3: ACLs entre VLANs
+
+Matriz de pruebas (✅ = pasa, ❌ = bloqueado). El esperado coincidió con el real en todos los casos.
+
+| Origen | Destino | Esperado | Real |
+|---|---|---|---|
+| PC-GUEST | Gateway 10.0.20.1 | ✅ | ✅ |
+| PC-GUEST | Internet (203.0.113.10) | ✅ | ✅ |
+| PC-GUEST | SRV-WEB (10.0.50.20) | ❌ | ❌ |
+| PC-GUEST | PC-ADMIN | ❌ | ❌ |
+| PC-CREW | DHCP (release/renew) y gateway | ✅ | ✅ |
+| PC-CREW | Internet | ✅ | ✅ |
+| PC-CREW | SRV-WEB (ping y HTTP) | ✅ | ✅ |
+| PC-CREW | SRV-INFRA (10.0.50.10) | ❌ | ❌ |
+| PC-CREW | PC-ADMIN y PC-GUEST | ❌ | ❌ |
+| PC-BRIDGE | SRV-WEB (ping y HTTP) | ✅ | ✅ |
+| PC-BRIDGE | Internet y SRV-INFRA | ❌ | ❌ |
+| PC-BRIDGE | PC-ADMIN | ❌ | ❌ |
+| PC-ADMIN | PC-GUEST, PC-CREW, PC-BRIDGE y teléfonos VLAN 40 | ✅ | ✅ |
+
+**Failover con las ACLs:** con DIST-SW1 apagado, DIST-SW2 quedó Active en las 7 VLANs y siguió filtrando igual (PC-CREW llegó a SRV-WEB e Internet y siguió sin llegar a SRV-INFRA). Al encenderlo, el reparto original volvió por preempt y las cuatro líneas `ip access-group` seguían en DIST-SW1.
+
+**HSRPv2:** en los contadores de las ACLs, los hello de HSRP aparecen en la línea de `224.0.0.102` (HSRPv2) y la de `224.0.0.2` (HSRPv1) queda sin coincidencias, lo que concuerda con `standby version 2`.
+
+**Notas:**
+- Los pings a 203.0.113.10 a veces pierden el primer paquete, también sin failover. Causa no determinada.
+- Al aplicar `ACL-BRIDGE-IN` hubo cambios breves de estado HSRP (VLAN 30 y VLAN 60) que se resolvieron solos, con un solo Active por VLAN al final. La VLAN 30 no tiene ACL. Causa no determinada.
+- `ACL-VOICE-IN` está aplicada y los teléfonos reciben IP en la VLAN 40; el registro y las llamadas se prueban con la voz IP (CME).
+
+![Pruebas ACL GUESTS](./capturas/fase3/acl-guests-pruebas.png)
+![Pruebas ACL CREW](./capturas/fase3/acl-crew-pruebas.png)
+
+Evidencia en [`capturas/fase3/acls.txt`](./capturas/fase3/acls.txt) y [`capturas/fase3/failover-dist.txt`](./capturas/fase3/failover-dist.txt).
+
 ---
 
 ## Problemas encontrados y cómo se resolvieron
@@ -279,6 +315,12 @@ Configuración y puertos confiables en [`capturas/fase3/dhcp-snooping.txt`](./ca
 **Causa probable:** el servidor traía un pool por defecto (`serverPool`) en la misma red 10.0.10.0/24, que interfería con el pool de prueba y no se puede eliminar.
 **Solución:** cambiar el rango de `serverPool` a otra red. Después, la PC tomó la IP del servidor falso.
 
+### 11. `ip access-group` en las SVIs no aparecía en la configuración (PT 9.0.0.0810)
+**Síntoma:** en 9.0.0.0810, la línea `ip access-group` no aparecía en `show run` ni en `show ip interface` ("Inbound access list is not set") y no persistía al reabrir el .pkt, aunque la ACL filtraba con el archivo abierto.
+**Diagnóstico:** los pings a destinos bloqueados devolvían "Destination host unreachable" desde el DIST activo y los contadores de `show access-lists` subían solo ahí. Al reabrir el .pkt, las ACLs seguían definidas pero dejaban de estar aplicadas.
+**Solución:** instalar Packet Tracer 9.0.1 y reaplicar las ACLs en las SVIs. Desde entonces la línea aparece en `show run` y persiste tras cerrar y reabrir.
+**Causa:** no determinada (comportamiento de 9.0.0.0810).
+
 ## De v1 a v2
 
 La versión 1 (campus básico) funcionaba, pero al revisarla con más criterio aparecieron limitaciones que dieron origen a este rediseño:
@@ -289,7 +331,7 @@ La versión 1 (campus básico) funcionaba, pero al revisarla con más criterio a
 - **ACLs asimétricas** entre VLANs: el aislamiento funcionaba parcialmente "por accidente".
 - **Un único switch**, sin redundancia de capa 2, y un router por cada función de gateway.
 
-En la v2, el DHCP pasará a un servidor central, las ACLs se aplicarán en las SVIs y los puntos únicos de falla se eliminan con la jerarquía de tres capas.
+En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs de ambos DIST con las mismas reglas, y los puntos únicos de falla se eliminan con la jerarquía de tres capas.
 
 ---
 
@@ -298,6 +340,8 @@ En la v2, el DHCP pasará a un servidor central, las ACLs se aplicarán en las S
 - Packet Tracer no simula la **latencia ni el ancho de banda variable** de un enlace satelital real.
 - No se simulan los transceivers ni las distancias de fibra más allá del tipo de módulo.
 - **Mejoras previstas:** QoS en el Edge, Wi-Fi con controladora, automatización de respaldos con Python/Netmiko, replicar el bloque de distribución por cubiertas.
+- - Las ACLs son **sin estado**: `tcp established` solo mira las banderas del paquete y no sustituye a un firewall.
+- `ACL-VOICE-IN` no se ha probado con tráfico de telefonía hasta configurar CME en R-VOZ.
 
 ---
 
