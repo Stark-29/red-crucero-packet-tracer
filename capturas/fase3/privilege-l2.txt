@@ -1,0 +1,151 @@
+PRIVILEGIO 15 EN LOS SWITCHES L2 - MS VANDAMME
+Packet Tracer 9.0.1. En los 4 switches L2 (ACC-CREW, ACC-GUEST, ACC-BRIDGE y SW-DC) el comando
+"username admin privilege 15 secret lab123" se acepta, pero "show run" muestra el usuario sin
+"privilege 15". Tras cerrar y reabrir Packet Tracer, el SSH entra en modo usuario (>).
+Los equipos L3 (DIST, CORE) sí entran directo en modo privilegiado (#).
+Causa no determinada (comportamiento de Packet Tracer). Los hashes se muestran como <REDACTED>.
+
+
+=== 1. COMANDO APLICADO Y ESTADO EN LA CONFIGURACIÓN ===
+
+--- ACC-CREW ---
+
+ACC-CREW#configure terminal
+ACC-CREW(config)#username admin privilege 15 secret lab123
+ACC-CREW(config)#do show run | include admin
+username admin secret 5 <REDACTED>
+ACC-CREW(config)#do write memory
+Building configuration...
+[OK]
+
+--- ACC-GUEST ---
+
+ACC-GUEST#configure terminal
+ACC-GUEST(config)#username admin privilege 15 secret lab123
+ACC-GUEST(config)#do show run | include admin
+username admin secret 5 <REDACTED>
+ACC-GUEST(config)#do write memory
+Building configuration...
+[OK]
+
+--- ACC-BRIDGE ---
+
+ACC-BRIDGE#configure terminal
+ACC-BRIDGE(config)#username admin privilege 15 secret lab123
+ACC-BRIDGE(config)#do show run | include admin
+username admin secret 5 <REDACTED>
+ACC-BRIDGE(config)#do write memory
+Building configuration...
+[OK]
+
+--- SW-DC ---
+
+SW-DC#configure terminal
+SW-DC(config)#username admin privilege 15 secret lab123
+SW-DC(config)#do show run | include admin
+username admin secret 5 <REDACTED>
+SW-DC(config)#do write memory
+Building configuration...
+[OK]
+
+
+=== 2. SSH TRAS CERRAR Y REABRIR PACKET TRACER (DESDE PC-ADMIN) ===
+
+Los 4 L2 entran en modo usuario (>). En el primer intento a ACC-CREW la contraseña fue
+rechazada ("Login invalid") y el segundo intento entró; causa no determinada.
+
+C:\>ssh -l admin 10.0.100.11
+
+Password:
+% Login invalid
+
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+ACC-CREW>ex
+
+[Connection to 10.0.100.11 closed by foreign host]
+C:\>ssh -l admin 10.0.100.12
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+ACC-GUEST>ex
+
+[Connection to 10.0.100.12 closed by foreign host]
+C:\>ssh -l admin 10.0.100.13
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+ACC-BRIDGE>ex
+
+[Connection to 10.0.100.13 closed by foreign host]
+C:\>ssh -l admin 10.0.100.20
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+SW-DC>
+
+
+=== 3. SOLUCIÓN: enable CON EL ENABLE SECRET (L2) ===
+
+C:\>ssh -l admin 10.0.100.11
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+ACC-CREW>en
+Password:
+ACC-CREW#sh privi
+Current privilege level is 15
+ACC-CREW#ex
+
+[Connection to 10.0.100.11 closed by foreign host]
+
+
+=== 4. COMPARACIÓN CON UN EQUIPO L3 (CORE-SW1) ===
+
+En el L3 entra directo en modo privilegiado, sin enable.
+
+C:\>ssh -l admin 10.254.0.11
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+CORE-SW1#
+
+
+=== 5. EL SSH RESTRINGIDO SOBREVIVE AL REABRIR ===
+
+ACC-CREW#show run | section line vty
+line vty 0 4
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
