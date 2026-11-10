@@ -2,7 +2,7 @@
 
 Diseño e implementación de la red de un crucero ficticio **MS Vandamme**, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
 
-> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso: DHCP, snooping, SSH restringido y ACLs listos; falta la voz IP. Ver [Estado del proyecto](#estado-del-proyecto).
+> **Estado:** en desarrollo. Las Fases 0, 1, 2 y 3 están terminadas y verificadas; las Fases 4 y 5 (QoS, Wi-Fi, automatización) son opcionales. Ver [Estado del proyecto](#estado-del-proyecto).
 
 Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus básico con dos routers y un solo switch, que se conserva en [`v1-campus-basico/`](./v1-campus-basico). Las limitaciones de esa primera versión motivaron este rediseño (ver [De v1 a v2](#de-v1-a-v2)).
 
@@ -29,9 +29,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs · SSH restringido a la VLAN de administración.
-
-**Planificado (Fase 3):** Telefonía IP con Cisco CME
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs · SSH restringido a la VLAN de administración. · SSH restringido · telefonía IP con Cisco CME
 
 **Herramienta:** Cisco Packet Tracer 9.0.1 (las Fases 1 y 2 se construyeron en 9.0.0.0810; ver problema 11). El archivo `.pkt` puede no abrirse en versiones anteriores.
 
@@ -44,7 +42,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 | 0 | Diseño, plan de direccionamiento y topología | ✅ Terminada |
 | 1 | Capa 2 y gateways: VLANs, STP, EtherChannel, SVIs y HSRP | ✅ Terminada y verificada |
 | 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
-| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: DHCP, snooping, SSH, ACLs y SSH restringido listos; voz IP pendiente |
+| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | ✅ Terminada |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
 | 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
 
@@ -242,7 +240,7 @@ Matriz de pruebas (✅ = pasa, ❌ = bloqueado). El esperado coincidió con el r
 **Notas:**
 - Los pings a 203.0.113.10 a veces pierden el primer paquete, también sin failover. Causa no determinada.
 - Al aplicar `ACL-BRIDGE-IN` hubo cambios breves de estado HSRP (VLAN 30 y VLAN 60) que se resolvieron solos, con un solo Active por VLAN al final. La VLAN 30 no tiene ACL. Causa no determinada.
-- `ACL-VOICE-IN` está aplicada y los teléfonos reciben IP en la VLAN 40; el registro y las llamadas se prueban con la voz IP (CME).
+- ACL-VOICE-IN: probada con el registro y las llamadas de los teléfonos (ver Fase 3: voz IP).
 
 ![Pruebas ACL GUESTS](./capturas/fase3/acl-guests-pruebas.png)
 ![Pruebas ACL CREW](./capturas/fase3/acl-crew-pruebas.png)
@@ -266,6 +264,24 @@ Consecuencia: ya no se puede saltar por SSH de un equipo a otro; el acceso es so
 ![SSH rechazado desde CORE-SW1](./capturas/fase3/ssh-bloqueado-core.png)
 
 Evidencia en [`capturas/fase3/ssh-restringido.txt`](./capturas/fase3/ssh-restringido.txt).
+
+### Fase 3: voz IP (Cisco CME)
+
+R-VOZ (10.0.50.5) ofrece telefonía con `telephony-service` sobre SCCP (TCP 2000). Los 4 teléfonos, en la VLAN 40, reciben IP del DHCP central y se registran solos. Las extensiones se asignan por orden de registro y se ajustaron para que cada área tenga su rango: CREW 1001-1002, GUEST 1101, BRIDGE 2001.
+
+| Prueba | Esperado | Real |
+|---|---|---|
+| Registro de los 4 teléfonos en R-VOZ | ✅ | ✅ |
+| Llamada 1001 → 1002 | ✅ | ✅ |
+| Extensiones tras cerrar y reabrir el .pkt | Sin cambios | Sin cambios |
+| `ACL-VOICE-IN`: TCP 2000 hacia R-VOZ | Permitido | 82 coincidencias en DIST-SW2 |
+| SSH desde PC-ADMIN a R-VOZ | ✅ | ✅ |
+
+La voz viaja dentro de la VLAN 40 y no cruza ninguna ACL; solo el registro (TCP 2000) llega a R-VOZ por la VLAN 50. En los contadores, la línea de UDP hacia R-VOZ (TFTP) no registró coincidencias y el `deny` final suma 16; causa no determinada.
+
+![Llamada 1001 a 1002](./capturas/fase3/voz-llamada.png)
+
+Evidencia en [`capturas/fase3/voz-ip.txt`](./capturas/fase3/voz-ip.txt).
 
 ---
 
@@ -364,8 +380,8 @@ En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs d
 - Packet Tracer no simula la **latencia ni el ancho de banda variable** de un enlace satelital real.
 - No se simulan los transceivers ni las distancias de fibra más allá del tipo de módulo.
 - **Mejoras previstas:** QoS en el Edge, Wi-Fi con controladora, automatización de respaldos con Python/Netmiko, replicar el bloque de distribución por cubiertas.
-- - Las ACLs son **sin estado**: `tcp established` solo mira las banderas del paquete y no sustituye a un firewall.
-- `ACL-VOICE-IN` no se ha probado con tráfico de telefonía hasta configurar CME en R-VOZ.
+- Las ACLs son **sin estado**: `tcp established` solo mira las banderas del paquete y no sustituye a un firewall.
+- El router 2911 de Packet Tracer no ofrece `telephony-service` (ni activando la licencia de voz). R-VOZ usa un 2811, que sí lo trae, con puertos FastEthernet.
 
 ---
 
