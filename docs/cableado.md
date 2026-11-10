@@ -69,7 +69,7 @@ Tabla de conexiones entre equipos (obtenida con `show cdp neighbors`) y las `des
 | Equipo A | Puerto A | Equipo B | Puerto B |
 |---|---|---|---|
 | SW-DC | Fa0/1 | SRV-INFRA | NIC |
-| SW-DC | Fa0/2 | R-VOZ | Gi0/0 |
+| SW-DC | Fa0/2 | R-VOZ | Fa0/0 |
 | SW-DC | Fa0/3 | SRV-WEB | NIC |
 
 ### Puertos de usuario (Access)
@@ -344,7 +344,7 @@ interface Vlan100
 ### R-VOZ
 
 ```
-interface GigabitEthernet0/0
+interface FastEthernet0/0
  description LAN to SW-DC Fa0/2 VLAN50 10.0.50.5
 ```
 
