@@ -2,7 +2,7 @@
 
 Diseño e implementación de la red de un crucero ficticio **MS Vandamme**, con arquitectura de tres capas (Access, Distribution, Core), gateways redundantes, enrutamiento OSPF multiárea y salida a Internet por dos enlaces satelitales.
 
-> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso: DHCP, snooping, SSH y ACLs listos; faltan el SSH restringido y la voz IP. Ver [Estado del proyecto](#estado-del-proyecto).
+> **Estado:** en desarrollo. Las Fases 0, 1 y 2 están terminadas y verificadas; la Fase 3 (servicios y seguridad) está en curso: DHCP, snooping, SSH restringido y ACLs listos; falta la voz IP. Ver [Estado del proyecto](#estado-del-proyecto).
 
 Este proyecto es la segunda versión (v2) de un laboratorio anterior de campus básico con dos routers y un solo switch, que se conserva en [`v1-campus-basico/`](./v1-campus-basico). Las limitaciones de esa primera versión motivaron este rediseño (ver [De v1 a v2](#de-v1-a-v2)).
 
@@ -29,9 +29,9 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs · SSH restringido a la VLAN de administración.
 
-**Planificado (Fase 3):** SSH restringido a la VLAN de administración · telefonía IP con Cisco CME
+**Planificado (Fase 3):** Telefonía IP con Cisco CME
 
 **Herramienta:** Cisco Packet Tracer 9.0.1 (las Fases 1 y 2 se construyeron en 9.0.0.0810; ver problema 11). El archivo `.pkt` puede no abrirse en versiones anteriores.
 
@@ -44,7 +44,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 | 0 | Diseño, plan de direccionamiento y topología | ✅ Terminada |
 | 1 | Capa 2 y gateways: VLANs, STP, EtherChannel, SVIs y HSRP | ✅ Terminada y verificada |
 | 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
-| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: DHCP, snooping, SSH y ACLs listos; SSH restringido y voz IP pendientes |
+| 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | 🔄 En curso: DHCP, snooping, SSH, ACLs y SSH restringido listos; voz IP pendiente |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
 | 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
 
@@ -248,6 +248,24 @@ Matriz de pruebas (✅ = pasa, ❌ = bloqueado). El esperado coincidió con el r
 ![Pruebas ACL CREW](./capturas/fase3/acl-crew-pruebas.png)
 
 Evidencia en [`capturas/fase3/acls.txt`](./capturas/fase3/acls.txt) y [`capturas/fase3/failover-dist.txt`](./capturas/fase3/failover-dist.txt).
+
+### Fase 3: SSH restringido a ADMIN-IT
+
+Los 11 equipos con SSH aceptan conexiones solo desde la VLAN 30. Se usa la ACL estándar `SSH-ADMIN` aplicada con `access-class` en las líneas vty 0-4 y 5-15. El mismo bloque se aplicó en los 11 equipos y se probó en tres (DIST-SW1, CORE-SW1 y ACC-CREW).
+
+| Origen | Destino | Esperado | Real |
+|---|---|---|---|
+| PC-ADMIN (VLAN 30) | DIST-SW1 (10.0.100.2) | ✅ | ✅ |
+| PC-ADMIN | CORE-SW1 (loopback 10.254.0.11) | ✅ | ✅ |
+| PC-ADMIN | ACC-CREW (10.0.100.11) | ✅ | ✅ |
+| CORE-SW1 (fuera de la VLAN 30) | DIST-SW1 | ❌ | ❌ (Connection refused) |
+
+Consecuencia: ya no se puede saltar por SSH de un equipo a otro; el acceso es solo desde la VLAN 30.
+
+![SSH permitido desde PC-ADMIN](./capturas/fase3/ssh-restringido-admin.png)
+![SSH rechazado desde CORE-SW1](./capturas/fase3/ssh-bloqueado-core.png)
+
+Evidencia en [`capturas/fase3/ssh-restringido.txt`](./capturas/fase3/ssh-restringido.txt).
 
 ---
 
