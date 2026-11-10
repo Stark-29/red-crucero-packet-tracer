@@ -1,0 +1,263 @@
+ACLs EN LAS SVIs - MS VANDAMME
+Packet Tracer 9.0.1. Las 4 ACLs son idénticas en DIST-SW1 y DIST-SW2 y se aplican
+en entrada (in) en la SVI de cada VLAN. ADMIN-IT (VLAN 30) y las VLANs 50 y 100 no llevan ACL.
+
+Los contadores de "show access-lists" de las secciones ACL-* se capturaron durante las
+pruebas, en la sesión de Packet Tracer 9.0.0.0810 (antes de actualizar). Los contadores
+se reinician al reabrir el .pkt.
+
+
+=== APLICACIÓN DE LAS ACLs EN LAS SVIs ===
+
+--- DIST-SW1: tras aplicar las ACLs en 9.0.1 ---
+
+DIST-SW1#show run | begin interface Vlan10
+interface Vlan10
+ description GW CREW (HSRP VIP 10.0.10.1)
+ mac-address 0060.2fbd.ab01
+ ip address 10.0.10.2 255.255.255.0
+ ip helper-address 10.0.50.10
+ ip ospf 1 area 1
+ ip access-group ACL-CREW-IN in
+ standby version 2
+ standby 10 ip 10.0.10.1
+ standby 10 priority 110
+ standby 10 preempt
+!
+interface Vlan20
+ description GW GUESTS (HSRP VIP 10.0.20.1)
+ mac-address 0060.2fbd.ab02
+ ip address 10.0.20.2 255.255.255.0
+ ip helper-address 10.0.50.10
+ ip ospf 1 area 1
+ ip access-group ACL-GUESTS-IN in
+ standby version 2
+ standby 20 ip 10.0.20.1
+!
+interface Vlan30
+ description GW ADMIN-IT (HSRP VIP 10.0.30.1)
+ mac-address 0060.2fbd.ab03
+ ip address 10.0.30.2 255.255.255.0
+ ip helper-address 10.0.50.10
+ ip ospf 1 area 1
+ standby version 2
+ standby 30 ip 10.0.30.1
+ standby 30 priority 110
+ standby 30 preempt
+!
+interface Vlan40
+ description GW VOICE (HSRP VIP 10.0.40.1)
+ mac-address 0060.2fbd.ab04
+ ip address 10.0.40.2 255.255.255.0
+ ip helper-address 10.0.50.10
+ ip ospf 1 area 1
+ ip access-group ACL-VOICE-IN in
+ standby version 2
+ standby 40 ip 10.0.40.1
+!
+interface Vlan50
+ description GW SERVERS (HSRP VIP 10.0.50.1)
+ mac-address 0060.2fbd.ab05
+ ip address 10.0.50.2 255.255.255.0
+ ip ospf 1 area 1
+ standby version 2
+ standby 50 ip 10.0.50.1
+ standby 50 priority 110
+ standby 50 preempt
+!
+interface Vlan60
+ description GW BRIDGE-OPS (HSRP VIP 10.0.60.1)
+ mac-address 0060.2fbd.ab06
+ ip address 10.0.60.2 255.255.255.0
+ ip helper-address 10.0.50.10
+ ip ospf 1 area 1
+ ip access-group ACL-BRIDGE-IN in
+ standby version 2
+ standby 60 ip 10.0.60.1
+!
+
+--- DIST-SW2: tras aplicar las ACLs, antes de reiniciar ---
+
+DIST-SW2#show run | include access-group
+ ip access-group ACL-CREW-IN in
+ ip access-group ACL-GUESTS-IN in
+ ip access-group ACL-VOICE-IN in
+ ip access-group ACL-BRIDGE-IN in
+
+--- DIST-SW1: tras reinicio completo de Packet Tracer ---
+
+DIST-SW1#show run | include access-group
+ ip access-group ACL-CREW-IN in
+ ip access-group ACL-GUESTS-IN in
+ ip access-group ACL-VOICE-IN in
+ ip access-group ACL-BRIDGE-IN in
+
+
+=== ACL-CREW-IN (VLAN 10, Active: DIST-SW1) ===
+
+--- DIST-SW1 ---
+
+DIST-SW1#show access-lists ACL-CREW-IN
+Extended IP access list ACL-CREW-IN
+    permit udp any eq bootpc any eq bootps (3 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (422 match(es))
+    permit icmp any 10.0.10.0 0.0.0.3 (2 match(es))
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any host 10.0.50.20 (4 match(es))
+    permit tcp any host 10.0.50.20 eq www (12 match(es))
+    permit tcp any host 10.0.50.20 eq 443
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply (4 match(es))
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any 10.0.0.0 0.255.255.255 (8 match(es))
+    permit ip any any (4 match(es))
+
+--- DIST-SW2 ---
+
+DIST-SW2#show access-lists ACL-CREW-IN
+Extended IP access list ACL-CREW-IN
+    permit udp any eq bootpc any eq bootps (3 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (418 match(es))
+    permit icmp any 10.0.10.0 0.0.0.3
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any host 10.0.50.20
+    permit tcp any host 10.0.50.20 eq www
+    permit tcp any host 10.0.50.20 eq 443
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any 10.0.0.0 0.255.255.255 (2 match(es))
+    permit ip any any (2 match(es))
+
+
+=== ACL-GUESTS-IN (VLAN 20, Active: DIST-SW2) ===
+
+--- DIST-SW1 ---
+
+DIST-SW1#show access-lists ACL-GUESTS-IN
+Extended IP access list ACL-GUESTS-IN
+    permit udp any eq bootpc any eq bootps (6 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (169 match(es))
+    permit icmp any 10.0.20.0 0.0.0.3
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any 10.0.0.0 0.255.255.255
+    permit ip any any
+
+--- DIST-SW2 ---
+
+DIST-SW2#show access-lists ACL-GUESTS-IN
+Extended IP access list ACL-GUESTS-IN
+    permit udp any eq bootpc any eq bootps (6 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (162 match(es))
+    permit icmp any 10.0.20.0 0.0.0.3 (4 match(es))
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply (4 match(es))
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any 10.0.0.0 0.255.255.255 (16 match(es))
+    permit ip any any (20 match(es))
+
+
+=== ACL-VOICE-IN (VLAN 40, Active: DIST-SW2) ===
+
+Aplicada y con los teléfonos recibiendo IP en la VLAN 40. El registro y las llamadas
+se prueban en el paso de voz IP (CME en R-VOZ).
+
+--- DIST-SW1 ---
+
+DIST-SW1#show access-lists ACL-VOICE-IN
+Extended IP access list ACL-VOICE-IN
+    permit udp any eq bootpc any eq bootps (84 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (56 match(es))
+    permit icmp any 10.0.40.0 0.0.0.3 (56 match(es))
+    permit tcp any host 10.0.50.5 eq 2000
+    permit udp any host 10.0.50.5
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any
+
+--- DIST-SW2 ---
+
+DIST-SW2#show access-lists ACL-VOICE-IN
+Extended IP access list ACL-VOICE-IN
+    permit udp any eq bootpc any eq bootps (84 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (53 match(es))
+    permit icmp any 10.0.40.0 0.0.0.3
+    permit tcp any host 10.0.50.5 eq 2000 (306 match(es))
+    permit udp any host 10.0.50.5
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply (11 match(es))
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any (112 match(es))
+
+
+=== ACL-BRIDGE-IN (VLAN 60, Active: DIST-SW2) ===
+
+--- DIST-SW1 ---
+
+DIST-SW1#show access-lists ACL-BRIDGE-IN
+Extended IP access list ACL-BRIDGE-IN
+    permit udp any eq bootpc any eq bootps (3 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (151 match(es))
+    permit icmp any 10.0.60.0 0.0.0.3 (2 match(es))
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any host 10.0.50.20
+    permit tcp any host 10.0.50.20 eq www
+    permit tcp any host 10.0.50.20 eq 443
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any
+
+--- DIST-SW2 ---
+
+DIST-SW2#show access-lists ACL-BRIDGE-IN
+Extended IP access list ACL-BRIDGE-IN
+    permit udp any eq bootpc any eq bootps (3 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (153 match(es))
+    permit icmp any 10.0.60.0 0.0.0.3 (2 match(es))
+    permit udp any host 10.0.50.10 eq domain
+    permit tcp any host 10.0.50.10 eq domain
+    permit icmp any host 10.0.50.20 (4 match(es))
+    permit tcp any host 10.0.50.20 eq www (5 match(es))
+    permit tcp any host 10.0.50.20 eq 443
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply (4 match(es))
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any (12 match(es))
+
+
+=== HSRP TRAS APLICAR LAS 4 ACLs (un solo Active por VLAN) ===
+
+DIST-SW1#show standby brief
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   110 P Active   local           10.0.10.3       10.0.10.1
+Vl20        20   100   Standby  10.0.20.3       local           10.0.20.1
+Vl30        30   110 P Active   local           10.0.30.3       10.0.30.1
+Vl40        40   100   Standby  10.0.40.3       local           10.0.40.1
+Vl50        50   110 P Active   local           10.0.50.3       10.0.50.1
+Vl60        60   100   Standby  10.0.60.3       local           10.0.60.1
+Vl100       100  110 P Active   local           10.0.100.3      10.0.100.1
+
+DIST-SW2#show standby brief
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   100   Standby  10.0.10.2       local           10.0.10.1
+Vl20        20   110 P Active   local           10.0.20.2       10.0.20.1
+Vl30        30   100   Standby  10.0.30.2       local           10.0.30.1
+Vl40        40   110 P Active   local           10.0.40.2       10.0.40.1
+Vl50        50   100   Standby  10.0.50.2       local           10.0.50.1
+Vl60        60   110 P Active   local           10.0.60.2       10.0.60.1
+Vl100       100  100   Standby  10.0.100.2      local           10.0.100.1
