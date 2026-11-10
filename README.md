@@ -339,6 +339,12 @@ Evidencia en [`capturas/fase3/ssh-restringido.txt`](./capturas/fase3/ssh-restrin
 **Solución:** instalar Packet Tracer 9.0.1 y reaplicar las ACLs en las SVIs. Desde entonces la línea aparece en `show run` y persiste tras cerrar y reabrir.
 **Causa:** no determinada (comportamiento de 9.0.0.0810).
 
+### 12. Los usuarios de los switches L2 no conservan el privilegio 15 (PT 9.0.1)
+**Síntoma:** en los switches L2, `username admin privilege 15 secret ...` se acepta, pero `show run | include admin` muestra el usuario sin `privilege 15`. Al cerrar y reabrir el .pkt, el SSH entra en modo usuario (`ACC-CREW>`), mientras que en los equipos L3 entra directo en `#`.
+**Verificación:** reproducido en los cuatro L2 (ACC-CREW, ACC-GUEST, ACC-BRIDGE y SW-DC) con Packet Tracer 9.0.1. Mientras el archivo está abierto el privilegio funciona; al reabrir se pierde.
+**Solución:** tras entrar por SSH a un L2, usar `enable` con el enable secret.
+**Causa:** no determinada (comportamiento de Packet Tracer).
+
 ## De v1 a v2
 
 La versión 1 (campus básico) funcionaba, pero al revisarla con más criterio aparecieron limitaciones que dieron origen a este rediseño:
