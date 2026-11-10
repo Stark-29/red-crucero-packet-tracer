@@ -78,6 +78,7 @@ Tabla de conexiones entre equipos (obtenida con `show cdp neighbors`) y las `des
 |---|---|---|---|
 | ACC-CREW | Fa0/1, Fa0/2 | Teléfono IP + PC detrás | 10 (datos) / 40 (voz) |
 | ACC-CREW | Fa0/3 | PC | 10 |
+| ACC-CREW | Fa0/4 | PC del administrador de TI | 30 |
 | ACC-GUEST | Fa0/1 | Teléfono IP + PC detrás | 20 (datos) / 40 (voz) |
 | ACC-GUEST | Fa0/2 - Fa0/3 | PC | 20 |
 | ACC-BRIDGE | Fa0/1 | Teléfono IP + PC detrás | 60 (datos) / 40 (voz) |
@@ -283,6 +284,8 @@ interface FastEthernet0/2
  description PHONE-CREW-2 + PC-CREW-2
 interface FastEthernet0/3
  description PC-CREW-3 VLAN10
+interface FastEthernet0/4
+ description PC-ADMIN-1 VLAN30
 interface Vlan100
  description MGMT ACC-CREW
 ```
@@ -348,8 +351,12 @@ interface GigabitEthernet0/0
 ### Puertos sin uso
 
 ```
-! ACC-CREW, ACC-GUEST, ACC-BRIDGE y SW-DC
+! ACC-GUEST, ACC-BRIDGE y SW-DC
 interface range FastEthernet0/4 - 24
+ description UNUSED - shutdown
+
+! ACC-CREW (Fa0/4 lo usa PC-ADMIN)
+interface range FastEthernet0/5 - 24
  description UNUSED - shutdown
 
 ! SW-ISP
