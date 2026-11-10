@@ -1,0 +1,116 @@
+VOZ IP (CISCO CME) EN R-VOZ - MS VANDAMME
+Packet Tracer 9.0.1. R-VOZ es un router 2811 (10.0.50.5, VLAN 50) porque el 2911 de Packet
+Tracer no ofrece telephony-service. Los 4 teléfonos están en la VLAN 40, se registran por
+SCCP (TCP 2000) y la voz viaja dentro de la VLAN 40, sin cruzar ninguna ACL.
+
+Extensiones (se asignan con "auto assign", por orden de registro; se ajustaron cambiando
+los números de los ephone-dn):
+
+  PHONE-CREW-1    1001
+  PHONE-CREW-2    1002
+  PHONE-GUEST-1   1101
+  PHONE-BRIDGE-1  2001
+
+
+=== 1. CONFIGURACIÓN DE TELEFONÍA ===
+
+R-VOZ#show run | section telephony-service
+telephony-service
+max-ephones 5
+max-dn 5
+ip source-address 10.0.50.5 port 2000
+auto assign 1 to 5
+
+
+=== 2. TELÉFONOS REGISTRADOS ===
+
+Los 4 teléfonos aparecen REGISTERED, con IP en la VLAN 40 (10.0.40.0/24), y cada
+uno con su número. Las IPs las reparte el DHCP central y cambian al reabrir el .pkt.
+
+R-VOZ#show ephone
+
+ephone-1 Mac:0060.4776.1A7C TCP socket:[1] activeLine:0 REGISTERED in SCCP ver 12 and Server in ver 8
+mediaActive:0 offhook:0 ringing:0 reset:0 reset_sent:0 paging 0 debug:0 caps:8
+IP:10.0.40.14 1025 7960 keepalive 43 max_line 2
+button 1: dn 1 number 2001 CH1 IDLE
+
+ephone-2 Mac:0030.A34D.B65A TCP socket:[1] activeLine:0 REGISTERED in SCCP ver 12 and Server in ver 8
+mediaActive:0 offhook:0 ringing:0 reset:0 reset_sent:0 paging 0 debug:0 caps:8
+IP:10.0.40.20 1025 7960 keepalive 43 max_line 2
+button 1: dn 2 number 1002 CH1 IDLE
+
+ephone-3 Mac:00D0.BC48.68A6 TCP socket:[1] activeLine:0 REGISTERED in SCCP ver 12 and Server in ver 8
+mediaActive:0 offhook:0 ringing:0 reset:0 reset_sent:0 paging 0 debug:0 caps:8
+IP:10.0.40.12 1025 7960 keepalive 43 max_line 2
+button 1: dn 3 number 1101 CH1 IDLE
+
+ephone-4 Mac:0030.A3DC.E1E4 TCP socket:[1] activeLine:0 REGISTERED in SCCP ver 12 and Server in ver 8
+mediaActive:0 offhook:0 ringing:0 reset:0 reset_sent:0 paging 0 debug:0 caps:8
+IP:10.0.40.18 1025 7960 keepalive 43 max_line 2
+button 1: dn 4 number 1001 CH1 IDLE
+
+
+=== 3. LLAMADA ===
+
+PHONE-CREW-1 (1001) llamando a PHONE-CREW-2 (1002): estado "Connected".
+Captura: capturas/fase3/voz-llamada.png
+
+
+=== 4. ACL-VOICE-IN CON TRÁFICO DE TELEFONÍA ===
+
+En DIST-SW2 (Active de la VLAN 40) la línea de TCP 2000 hacia R-VOZ cuenta el
+registro de los teléfonos. La línea de UDP hacia R-VOZ (TFTP) no registra coincidencias;
+causa no determinada. El "deny ip any any" suma 16 coincidencias: tráfico de la VLAN 40
+que la ACL bloquea; no se identificó cuál es.
+
+DIST-SW1#show access-lists ACL-VOICE-IN
+Extended IP access list ACL-VOICE-IN
+    permit udp any eq bootpc any eq bootps (12 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (70 match(es))
+    permit icmp any 10.0.40.0 0.0.0.3 (7 match(es))
+    permit tcp any host 10.0.50.5 eq 2000
+    permit udp any host 10.0.50.5
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any
+
+DIST-SW2#show access-lists ACL-VOICE-IN
+Extended IP access list ACL-VOICE-IN
+    permit udp any eq bootpc any eq bootps (12 match(es))
+    permit udp any host 224.0.0.2 eq 1985
+    permit udp any host 224.0.0.102 eq 1985 (74 match(es))
+    permit icmp any 10.0.40.0 0.0.0.3
+    permit tcp any host 10.0.50.5 eq 2000 (82 match(es))
+    permit udp any host 10.0.50.5
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+    permit tcp any 10.0.30.0 0.0.0.255 established
+    deny ip any any (16 match(es))
+
+
+=== 5. SSH A R-VOZ (ROUTER NUEVO) ===
+
+Al copiar la configuración al 2811, el SSH rechazaba la conexión sin pedir contraseña
+("Connection closed by foreign host"). Las claves RSA no viajan en el running-config, así
+que SSH quedó deshabilitado. Se generaron claves nuevas:
+
+R-VOZ(config)#ip domain-name ship.local
+R-VOZ(config)#crypto key generate rsa modulus 2048
+R-VOZ(config)#ip ssh version 2
+
+R-VOZ(config)#do show ip ssh
+*Mar 1 0:21:18.493: %SSH-5-ENABLED: SSH 2 has been enabled
+SSH Enabled - version 2.0
+Authentication timeout: 120 secs; Authentication retries: 3
+
+Desde PC-ADMIN (VLAN 30):
+
+C:\>ssh -l admin 10.0.50.5
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+R-VOZ#

@@ -2,9 +2,8 @@ ACLs EN LAS SVIs - MS VANDAMME
 Packet Tracer 9.0.1. Las 4 ACLs son idénticas en DIST-SW1 y DIST-SW2 y se aplican
 en entrada (in) en la SVI de cada VLAN. ADMIN-IT (VLAN 30) y las VLANs 50 y 100 no llevan ACL.
 
-Los contadores de "show access-lists" de las secciones ACL-* se capturaron durante las
-pruebas, en la sesión de Packet Tracer 9.0.0.0810 (antes de actualizar). Los contadores
-se reinician al reabrir el .pkt.
+Los contadores de "show access-lists" de las secciones ACL-* se capturaron durante las pruebas, en la sesión de Packet Tracer 9.0.0.0810 (antes de actualizar), 
+salvo los de ACL-VOICE-IN, capturados en 9.0.1. Los contadores se reinician al reabrir el .pkt.
 
 
 === APLICACIÓN DE LAS ACLs EN LAS SVIs ===
@@ -165,19 +164,18 @@ Extended IP access list ACL-GUESTS-IN
     permit ip any any (20 match(es))
 
 
-=== ACL-VOICE-IN (VLAN 40, Active: DIST-SW2) ===
+==== ACL-VOICE-IN (VLAN 40, Active: DIST-SW2) ===
 
-Aplicada y con los teléfonos recibiendo IP en la VLAN 40. El registro y las llamadas
-se prueban en el paso de voz IP (CME en R-VOZ).
+Contadores capturados con PT 9.0.1 y los teléfonos registrados en R-VOZ (ver voz-ip.txt).
 
 --- DIST-SW1 ---
 
 DIST-SW1#show access-lists ACL-VOICE-IN
 Extended IP access list ACL-VOICE-IN
-    permit udp any eq bootpc any eq bootps (84 match(es))
+    permit udp any eq bootpc any eq bootps (12 match(es))
     permit udp any host 224.0.0.2 eq 1985
-    permit udp any host 224.0.0.102 eq 1985 (56 match(es))
-    permit icmp any 10.0.40.0 0.0.0.3 (56 match(es))
+    permit udp any host 224.0.0.102 eq 1985 (70 match(es))
+    permit icmp any 10.0.40.0 0.0.0.3 (7 match(es))
     permit tcp any host 10.0.50.5 eq 2000
     permit udp any host 10.0.50.5
     permit icmp any 10.0.30.0 0.0.0.255 echo-reply
@@ -188,15 +186,15 @@ Extended IP access list ACL-VOICE-IN
 
 DIST-SW2#show access-lists ACL-VOICE-IN
 Extended IP access list ACL-VOICE-IN
-    permit udp any eq bootpc any eq bootps (84 match(es))
+    permit udp any eq bootpc any eq bootps (12 match(es))
     permit udp any host 224.0.0.2 eq 1985
-    permit udp any host 224.0.0.102 eq 1985 (53 match(es))
+    permit udp any host 224.0.0.102 eq 1985 (74 match(es))
     permit icmp any 10.0.40.0 0.0.0.3
-    permit tcp any host 10.0.50.5 eq 2000 (306 match(es))
+    permit tcp any host 10.0.50.5 eq 2000 (82 match(es))
     permit udp any host 10.0.50.5
-    permit icmp any 10.0.30.0 0.0.0.255 echo-reply (11 match(es))
+    permit icmp any 10.0.30.0 0.0.0.255 echo-reply
     permit tcp any 10.0.30.0 0.0.0.255 established
-    deny ip any any (112 match(es))
+    deny ip any any (16 match(es))
 
 
 === ACL-BRIDGE-IN (VLAN 60, Active: DIST-SW2) ===
