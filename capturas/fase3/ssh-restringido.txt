@@ -1,0 +1,112 @@
+SSH RESTRINGIDO A LA VLAN 30 (ADMIN-IT) - MS VANDAMME
+Packet Tracer 9.0.1. Los 11 equipos con SSH (todos menos SAT-A, SAT-B y SW-ISP) aceptan
+conexiones SSH solo desde la VLAN 30 (10.0.30.0/24). Se usa una ACL estándar aplicada con
+access-class en las líneas vty. Antes de restringir, el SSH funcionaba desde cualquier
+red permitida: ver capturas/fase3/ssh-sin-restriccion.png.
+
+
+=== CONFIGURACIÓN (el mismo bloque en los 11 equipos) ===
+
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
+line vty 0 4
+ access-class SSH-ADMIN in
+line vty 5 15
+ access-class SSH-ADMIN in
+
+
+=== LÍNEAS VTY ===
+
+--- DIST-SW1 ---
+
+DIST-SW1#show run | section line vty
+line vty 0 4
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+
+--- ACC-CREW (switch de capa 2) ---
+
+ACC-CREW#show run | section line vty
+line vty 0 4
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+
+
+=== PRUEBAS PERMITIDAS: DESDE PC-ADMIN (VLAN 30) ===
+
+Esperado: entra por SSH.
+
+--- PC-ADMIN -> DIST-SW1 (10.0.100.2, SVI de la VLAN 100) ---
+
+C:\>ssh -l admin 10.0.100.2
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+DIST-SW1#
+
+--- PC-ADMIN -> CORE-SW1 (10.254.0.11, loopback) ---
+
+C:\>ssh -l admin 10.254.0.11
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+CORE-SW1#ex
+
+[Connection to 10.254.0.11 closed by foreign host]
+
+--- PC-ADMIN -> ACC-CREW (10.0.100.11) ---
+
+C:\>ssh -l admin 10.0.100.11
+
+Password:
+
+
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+
+
+ACC-CREW>
+
+
+=== PRUEBA BLOQUEADA: DESDE CORE-SW1 (FUERA DE LA VLAN 30) ===
+
+Esperado: rechazado. La conexión sale de CORE-SW1 con una IP del enlace /30
+10.255.3.x, que no pertenece a la VLAN 30. Captura: ssh-bloqueado-core.png.
+
+CORE-SW1#ssh -l admin 10.0.100.2
+
+% Connection refused by remote host
+
+Consecuencia: ya no se puede saltar por SSH de un equipo a otro (por ejemplo, de un DIST
+a un ACC). El acceso por SSH es solo desde la VLAN 30.
+
+
+=== CONTADORES DE LA ACL ===
+
+DIST-SW1#show access-lists SSH-ADMIN
+Standard IP access list SSH-ADMIN
+    permit 10.0.30.0 0.0.0.255 (4 match(es))
+    deny any (15 match(es))
