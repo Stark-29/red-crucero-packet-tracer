@@ -1,0 +1,145 @@
+PRUEBA DE FAILOVER DE DIST-SW1 CON LAS ACLs APLICADAS - MS VANDAMME
+Packet Tracer 9.0.1. Las 4 ACLs (CREW, GUESTS, VOICE, BRIDGE) están aplicadas en las SVIs
+de ambos DIST. Se apaga DIST-SW1 con el interruptor y se comprueba que DIST-SW2 toma las 7
+VLANs y filtra igual. Después se enciende DIST-SW1 y se comprueba el preempt.
+
+Estado inicial (un solo Active por VLAN en ambos DIST): ver el final de acls.txt.
+
+
+=== 1. DIST-SW1 APAGADO: HSRP EN DIST-SW2 ===
+
+DIST-SW2 queda Active en las 7 VLANs. El Standby aparece como "unknown" porque
+DIST-SW1 está apagado.
+
+DIST-SW2#sh stan br
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   100   Active   local           unknown         10.0.10.1
+Vl20        20   110 P Active   local           10.0.20.2       10.0.20.1
+Vl30        30   100   Active   local           unknown         10.0.30.1
+Vl40        40   110 P Active   local           10.0.40.2       10.0.40.1
+Vl50        50   100   Active   local           unknown         10.0.50.1
+Vl60        60   110 P Active   local           10.0.60.2       10.0.60.1
+Vl100       100  100   Active   local           unknown         10.0.100.1
+
+
+=== 2. DIST-SW1 APAGADO: PRUEBAS DESDE PC-CREW ===
+
+Esperado: SRV-WEB e Internet responden; SRV-INFRA (10.0.50.10) bloqueado.
+La ACL ahora filtra en DIST-SW2 (el "unreachable" viene de 10.0.10.3).
+
+C:\>ping 10.0.50.20
+
+Pinging 10.0.50.20 with 32 bytes of data:
+
+Reply from 10.0.50.20: bytes=32 time<1ms TTL=127
+Reply from 10.0.50.20: bytes=32 time=1ms TTL=127
+Reply from 10.0.50.20: bytes=32 time<1ms TTL=127
+Reply from 10.0.50.20: bytes=32 time<1ms TTL=127
+
+Ping statistics for 10.0.50.20:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+
+C:\>ping 203.0.113.10
+
+Pinging 203.0.113.10 with 32 bytes of data:
+
+Reply from 203.0.113.10: bytes=32 time<1ms TTL=123
+Reply from 203.0.113.10: bytes=32 time<1ms TTL=124
+Reply from 203.0.113.10: bytes=32 time<1ms TTL=123
+Reply from 203.0.113.10: bytes=32 time<1ms TTL=124
+
+Ping statistics for 203.0.113.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 10.0.50.10
+
+Pinging 10.0.50.10 with 32 bytes of data:
+
+Reply from 10.0.10.3: Destination host unreachable.
+Reply from 10.0.10.3: Destination host unreachable.
+Reply from 10.0.10.3: Destination host unreachable.
+Reply from 10.0.10.3: Destination host unreachable.
+
+Ping statistics for 10.0.50.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+
+=== 3. DIST-SW1 APAGADO: PC-ADMIN HACIA UN PC DE CREW ===
+
+Esperado: responde (ADMIN-IT tiene acceso total y las respuestas hacia la VLAN 30 están permitidas).
+
+C:\>ping 10.0.10.11
+
+Pinging 10.0.10.11 with 32 bytes of data:
+
+Reply from 10.0.10.11: bytes=32 time=1ms TTL=127
+Reply from 10.0.10.11: bytes=32 time<1ms TTL=127
+Reply from 10.0.10.11: bytes=32 time<1ms TTL=127
+Reply from 10.0.10.11: bytes=32 time<1ms TTL=127
+
+Ping statistics for 10.0.10.11:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+
+
+=== 4. DIST-SW1 ENCENDIDO DE NUEVO: PREEMPT ===
+
+El reparto original vuelve solo: DIST-SW1 Active en las VLANs 10, 30, 50 y 100;
+DIST-SW2 Active en las VLANs 20, 40 y 60.
+
+DIST-SW1#sh stand br
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   110 P Active   local           10.0.10.3       10.0.10.1
+Vl20        20   100   Standby  10.0.20.3       local           10.0.20.1
+Vl30        30   110 P Active   local           10.0.30.3       10.0.30.1
+Vl40        40   100   Standby  10.0.40.3       local           10.0.40.1
+Vl50        50   110 P Active   local           10.0.50.3       10.0.50.1
+Vl60        60   100   Standby  10.0.60.3       local           10.0.60.1
+Vl100       100  110 P Active   local           10.0.100.3      10.0.100.1
+
+DIST-SW2#sh stand br
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Vl10        10   100   Standby  10.0.10.2       local           10.0.10.1
+Vl20        20   110 P Active   local           10.0.20.2       10.0.20.1
+Vl30        30   100   Standby  10.0.30.2       local           10.0.30.1
+Vl40        40   110 P Active   local           10.0.40.2       10.0.40.1
+Vl50        50   100   Standby  10.0.50.2       local           10.0.50.1
+Vl60        60   110 P Active   local           10.0.60.2       10.0.60.1
+Vl100       100  100   Standby  10.0.100.2      local           10.0.100.1
+
+
+=== 5. DIST-SW1 ENCENDIDO DE NUEVO: ACLs Y FILTRADO ===
+
+Las 4 líneas ip access-group siguen en DIST-SW1 tras el arranque:
+
+DIST-SW1#show run | include access-group
+ ip access-group ACL-CREW-IN in
+ ip access-group ACL-GUESTS-IN in
+ ip access-group ACL-VOICE-IN in
+ ip access-group ACL-BRIDGE-IN in
+
+El filtrado vuelve a ser de DIST-SW1 (el "unreachable" viene de 10.0.10.2). El primer
+paquete se perdió (Request timed out), algo que ya había pasado en otras pruebas sin failover.
+
+C:\>ping 10.0.50.10
+
+Pinging 10.0.50.10 with 32 bytes of data:
+
+Request timed out.
+Reply from 10.0.10.2: Destination host unreachable.
+Reply from 10.0.10.2: Destination host unreachable.
+Reply from 10.0.10.2: Destination host unreachable.
+
+Ping statistics for 10.0.50.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
