@@ -164,7 +164,7 @@ Extended IP access list ACL-GUESTS-IN
     permit ip any any (20 match(es))
 
 
-==== ACL-VOICE-IN (VLAN 40, Active: DIST-SW2) ===
+=== ACL-VOICE-IN (VLAN 40, Active: DIST-SW2) ===
 
 Contadores capturados con PT 9.0.1 y los teléfonos registrados en R-VOZ (ver voz-ip.txt).
 
