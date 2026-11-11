@@ -1,7 +1,7 @@
 VOZ IP (CISCO CME) EN R-VOZ - MS VANDAMME
 Packet Tracer 9.0.1. R-VOZ es un router 2811 (10.0.50.5, VLAN 50) porque el 2911 de Packet
 Tracer no ofrece telephony-service. Los 4 teléfonos están en la VLAN 40, se registran por
-SCCP (TCP 2000) y la voz viaja dentro de la VLAN 40, sin cruzar ninguna ACL.
+SCCP (TCP 2000) y el audio no se puede comprobar en PT: las llamadas aparecen en CONNECTED con 0 paquetes de vo.
 
 Extensiones (se asignan con "auto assign", por orden de registro; se ajustaron cambiando
 los números de los ephone-dn):
