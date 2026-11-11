@@ -2,16 +2,26 @@
 version 15.0
 no service timestamps log datetime msec
 no service timestamps debug datetime msec
-no service password-encryption
+service password-encryption
 !
 hostname ACC-CREW
 !
+enable secret 5 <REDACTED>
 !
 !
+!
+ip ssh version 2
+ip domain-name ship.local
+!
+username admin secret 5 <REDACTED>
+username operador secret 5 <REDACTED>
 !
 vtp mode transparent
 !
 !
+ip dhcp snooping vlan 10,30,40
+no ip dhcp snooping information option
+ip dhcp snooping
 !
 spanning-tree mode rapid-pvst
 spanning-tree extend system-id
@@ -49,10 +59,11 @@ interface FastEthernet0/1
  switchport mode access
  switchport voice vlan 40
  switchport port-security
- switchport port-security maximum 2
+ switchport port-security maximum 3
  switchport port-security mac-address sticky 
  switchport port-security violation restrict 
  switchport port-security mac-address sticky 0030.A3DC.E1E4
+ switchport port-security mac-address sticky 0060.2F81.D41E
  spanning-tree portfast
  spanning-tree bpduguard enable
 !
@@ -62,10 +73,11 @@ interface FastEthernet0/2
  switchport mode access
  switchport voice vlan 40
  switchport port-security
- switchport port-security maximum 2
+ switchport port-security maximum 3
  switchport port-security mac-address sticky 
  switchport port-security violation restrict 
  switchport port-security mac-address sticky 0030.A34D.B65A
+ switchport port-security mac-address sticky 0030.F21C.88B9
  spanning-tree portfast
  spanning-tree bpduguard enable
 !
@@ -81,10 +93,15 @@ interface FastEthernet0/3
  spanning-tree bpduguard enable
 !
 interface FastEthernet0/4
- description UNUSED - shutdown
- switchport access vlan 999
+ description PC-ADMIN-1 VLAN30
+ switchport access vlan 30
  switchport mode access
- shutdown
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 00D0.BC45.D178
+ spanning-tree portfast
+ spanning-tree bpduguard enable
 !
 interface FastEthernet0/5
  description UNUSED - shutdown
@@ -210,12 +227,14 @@ interface GigabitEthernet0/1
  description TRUNK to DIST-SW1 Gi1/0/1
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ ip dhcp snooping trust
  switchport mode trunk
 !
 interface GigabitEthernet0/2
  description TRUNK to DIST-SW2 Gi1/0/1
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ ip dhcp snooping trust
  switchport mode trunk
 !
 interface Vlan1
@@ -228,17 +247,31 @@ interface Vlan100
 !
 ip default-gateway 10.0.100.1
 !
+banner motd #
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+#
 !
 !
 !
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
 line con 0
  logging synchronous
- exec-timeout 0 0
+ login local
+ exec-timeout 5 0
 !
 line vty 0 4
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 line vty 5 15
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 !
 !
 !

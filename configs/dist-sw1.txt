@@ -2,12 +2,14 @@
 version 16.3.2
 no service timestamps log datetime msec
 no service timestamps debug datetime msec
-no service password-encryption
+service password-encryption
 !
 hostname DIST-SW1
 !
+login block-for 120 attempts 3 within 60
 !
 no profinet
+enable secret 5 <REDACTED>
 !
 !
 !
@@ -21,6 +23,8 @@ no ipv6 cef
 !
 !
 !
+username admin privilege 15 secret 5 <REDACTED>
+username operador secret 5 <REDACTED>
 !
 !
 !
@@ -30,6 +34,9 @@ no ipv6 cef
 !
 !
 !
+!
+ip ssh version 2
+ip domain-name ship.local
 !
 !
 vtp mode transparent
@@ -260,7 +267,9 @@ interface Vlan10
  description GW CREW (HSRP VIP 10.0.10.1)
  mac-address 0060.2fbd.ab01
  ip address 10.0.10.2 255.255.255.0
+ ip helper-address 10.0.50.10
  ip ospf 1 area 1
+ ip access-group ACL-CREW-IN in
  standby version 2
  standby 10 ip 10.0.10.1
  standby 10 priority 110
@@ -270,7 +279,9 @@ interface Vlan20
  description GW GUESTS (HSRP VIP 10.0.20.1)
  mac-address 0060.2fbd.ab02
  ip address 10.0.20.2 255.255.255.0
+ ip helper-address 10.0.50.10
  ip ospf 1 area 1
+ ip access-group ACL-GUESTS-IN in
  standby version 2
  standby 20 ip 10.0.20.1
 !
@@ -278,6 +289,7 @@ interface Vlan30
  description GW ADMIN-IT (HSRP VIP 10.0.30.1)
  mac-address 0060.2fbd.ab03
  ip address 10.0.30.2 255.255.255.0
+ ip helper-address 10.0.50.10
  ip ospf 1 area 1
  standby version 2
  standby 30 ip 10.0.30.1
@@ -288,7 +300,9 @@ interface Vlan40
  description GW VOICE (HSRP VIP 10.0.40.1)
  mac-address 0060.2fbd.ab04
  ip address 10.0.40.2 255.255.255.0
+ ip helper-address 10.0.50.10
  ip ospf 1 area 1
+ ip access-group ACL-VOICE-IN in
  standby version 2
  standby 40 ip 10.0.40.1
 !
@@ -306,7 +320,9 @@ interface Vlan60
  description GW BRIDGE-OPS (HSRP VIP 10.0.60.1)
  mac-address 0060.2fbd.ab06
  ip address 10.0.60.2 255.255.255.0
+ ip helper-address 10.0.50.10
  ip ospf 1 area 1
+ ip access-group ACL-BRIDGE-IN in
  standby version 2
  standby 60 ip 10.0.60.1
 !
@@ -338,19 +354,117 @@ ip classless
 ip flow-export version 9
 !
 !
+ip access-list extended sl_def_acl
+ deny tcp any any eq telnet
+ deny tcp any any eq www
+ deny tcp any any eq 22
+ permit tcp any any eq 22
+ip access-list extended ACL-GUESTS-IN
+ remark DHCP
+ permit udp any eq bootpc any eq bootps
+ remark HSRP v1 y v2
+ permit udp any host 224.0.0.2 eq 1985
+ permit udp any host 224.0.0.102 eq 1985
+ remark Ping a VIP y DIST
+ permit icmp any 10.0.20.0 0.0.0.3
+ remark DNS
+ permit udp any host 10.0.50.10 eq domain
+ permit tcp any host 10.0.50.10 eq domain
+ remark Respuestas hacia ADMIN-IT
+ permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+ permit tcp any 10.0.30.0 0.0.0.255 established
+ remark Bloquear red interna
+ deny ip any 10.0.0.0 0.255.255.255
+ remark Internet
+ permit ip any any
+ip access-list extended ACL-CREW-IN
+ remark DHCP
+ permit udp any eq bootpc any eq bootps
+ remark HSRP v1 y v2
+ permit udp any host 224.0.0.2 eq 1985
+ permit udp any host 224.0.0.102 eq 1985
+ remark Ping a VIP y DIST
+ permit icmp any 10.0.10.0 0.0.0.3
+ remark DNS
+ permit udp any host 10.0.50.10 eq domain
+ permit tcp any host 10.0.50.10 eq domain
+ remark SRV-WEB
+ permit icmp any host 10.0.50.20
+ permit tcp any host 10.0.50.20 eq www
+ permit tcp any host 10.0.50.20 eq 443
+ remark Respuestas hacia ADMIN-IT
+ permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+ permit tcp any 10.0.30.0 0.0.0.255 established
+ remark Bloquear red interna
+ deny ip any 10.0.0.0 0.255.255.255
+ remark Internet
+ permit ip any any
+ip access-list extended ACL-VOICE-IN
+ remark DHCP
+ permit udp any eq bootpc any eq bootps
+ remark HSRP v1 y v2
+ permit udp any host 224.0.0.2 eq 1985
+ permit udp any host 224.0.0.102 eq 1985
+ remark Ping a VIP y DIST
+ permit icmp any 10.0.40.0 0.0.0.3
+ remark R-VOZ (SCCP)
+ permit tcp any host 10.0.50.5 eq 2000
+ remark TFTP a R-VOZ (puerto de datos variable)
+ permit udp any host 10.0.50.5
+ remark Respuestas hacia ADMIN-IT
+ permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+ permit tcp any 10.0.30.0 0.0.0.255 established
+ remark Todo lo demas bloqueado
+ deny ip any any
+ip access-list extended ACL-BRIDGE-IN
+ remark DHCP
+ permit udp any eq bootpc any eq bootps
+ remark HSRP v1 y v2
+ permit udp any host 224.0.0.2 eq 1985
+ permit udp any host 224.0.0.102 eq 1985
+ remark Ping a VIP y DIST
+ permit icmp any 10.0.60.0 0.0.0.3
+ remark DNS
+ permit udp any host 10.0.50.10 eq domain
+ permit tcp any host 10.0.50.10 eq domain
+ remark SRV-WEB
+ permit icmp any host 10.0.50.20
+ permit tcp any host 10.0.50.20 eq www
+ permit tcp any host 10.0.50.20 eq 443
+ remark Respuestas hacia ADMIN-IT
+ permit icmp any 10.0.30.0 0.0.0.255 echo-reply
+ permit tcp any 10.0.30.0 0.0.0.255 established
+ remark Aislada: sin Internet ni otras VLANs
+ deny ip any any
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
 !
+banner motd #
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+#
 !
 !
 !
 !
 line con 0
- exec-timeout 0 0
+ exec-timeout 5 0
  logging synchronous
+ login local
 !
 line aux 0
 !
 line vty 0 4
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 !
 !
 !

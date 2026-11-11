@@ -2,11 +2,14 @@
 version 15.4
 no service timestamps log datetime msec
 no service timestamps debug datetime msec
-no service password-encryption
+service password-encryption
 !
 hostname EDGE-R2
 !
+login block-for 120 attempts 3 within 60
 !
+!
+enable secret 5 <REDACTED>
 !
 !
 !
@@ -18,6 +21,8 @@ no ipv6 cef
 !
 !
 !
+username admin privilege 15 secret 5 <REDACTED>
+username operador secret 5 <REDACTED>
 !
 !
 !
@@ -27,6 +32,9 @@ no ipv6 cef
 !
 !
 !
+!
+ip ssh version 2
+ip domain-name ship.local
 !
 !
 spanning-tree mode pvst
@@ -70,6 +78,7 @@ interface GigabitEthernet0/0/2
  speed auto
 !
 interface Vlan1
+ mac-address 0090.0cd1.6701
  no ip address
  shutdown
 !
@@ -85,21 +94,42 @@ ip route 0.0.0.0 0.0.0.0 198.51.100.5
 ip flow-export version 9
 !
 !
+ip access-list extended sl_def_acl
+ deny tcp any any eq telnet
+ deny tcp any any eq www
+ deny tcp any any eq 22
+ permit tcp any any eq 22
 ip access-list standard ACL-NAT
  permit 10.0.0.0 0.0.255.255
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
 !
+banner motd #
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+#
 !
 !
 !
 !
 line con 0
- exec-timeout 0 0
+ exec-timeout 5 0
  logging synchronous
+ login local
 !
 line aux 0
 !
 line vty 0 4
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 !
 !
 !

@@ -1,0 +1,272 @@
+!
+version 15.0
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname ACC-GUEST
+!
+enable secret 5 <REDACTED>
+!
+!
+!
+ip ssh version 2
+no ip domain-lookup
+ip domain-name ship.local
+!
+username admin secret 5 <REDACTED>
+username operador secret 5 <REDACTED>
+!
+vtp mode transparent
+!
+!
+ip dhcp snooping vlan 20,40
+no ip dhcp snooping information option
+ip dhcp snooping
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+vlan 10
+ name CREW
+!
+vlan 20
+ name GUESTS
+!
+vlan 30
+ name ADMIN-IT
+!
+vlan 40
+ name VOICE
+!
+vlan 50
+ name SERVERS
+!
+vlan 60
+ name BRIDGE-OPS
+!
+vlan 99
+ name NATIVE
+!
+vlan 100
+ name MGMT
+!
+vlan 999
+ name UNUSED
+!
+interface FastEthernet0/1
+ description PHONE-GUEST-1 + PC-GUEST-1
+ switchport access vlan 20
+ switchport mode access
+ switchport voice vlan 40
+ switchport port-security
+ switchport port-security maximum 3
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 00D0.BC48.68A6
+ switchport port-security mac-address sticky 00E0.F9E5.294B
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+!
+interface FastEthernet0/2
+ description PC-GUEST-2 VLAN20
+ switchport access vlan 20
+ switchport mode access
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 00D0.972B.099E
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+!
+interface FastEthernet0/3
+ description PC-GUEST-3 VLAN20
+ switchport access vlan 20
+ switchport mode access
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+!
+interface FastEthernet0/4
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/5
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/6
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/7
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/8
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/9
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/10
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/11
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/12
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/13
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/14
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/15
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/16
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/17
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/18
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/19
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/20
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/21
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/22
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/23
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface FastEthernet0/24
+ description UNUSED - shutdown
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet0/1
+ description TRUNK to DIST-SW1 Gi1/0/2
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ ip dhcp snooping trust
+ switchport mode trunk
+!
+interface GigabitEthernet0/2
+ description TRUNK to DIST-SW2 Gi1/0/2
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,40,50,60,99-100
+ ip dhcp snooping trust
+ switchport mode trunk
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan100
+ description MGMT ACC-GUEST
+ ip address 10.0.100.12 255.255.255.0
+!
+ip default-gateway 10.0.100.1
+!
+banner motd #
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+#
+!
+!
+!
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
+line con 0
+ logging synchronous
+ login local
+ exec-timeout 5 0
+!
+line vty 0 4
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+line vty 5 15
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+!
+!
+!
+!
+end
+

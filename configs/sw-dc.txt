@@ -2,12 +2,19 @@
 version 15.0
 no service timestamps log datetime msec
 no service timestamps debug datetime msec
-no service password-encryption
+service password-encryption
 !
 hostname SW-DC
 !
+enable secret 5 <REDACTED>
 !
 !
+!
+ip ssh version 2
+ip domain-name ship.local
+!
+username admin secret 5 <REDACTED>
+username operador secret 5 <REDACTED>
 !
 vtp mode transparent
 !
@@ -45,12 +52,36 @@ vlan 999
 !
 interface FastEthernet0/1
  description SRV-INFRA 10.0.50.10
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 0001.6435.E2C9
+ spanning-tree portfast
+ spanning-tree bpduguard enable
 !
 interface FastEthernet0/2
  description R-VOZ 10.0.50.5
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 00D0.FF65.C701
+ spanning-tree portfast
+ spanning-tree bpduguard enable
 !
 interface FastEthernet0/3
  description SRV-WEB 10.0.50.20
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security
+ switchport port-security mac-address sticky 
+ switchport port-security violation restrict 
+ switchport port-security mac-address sticky 000B.BE16.8411
+ spanning-tree portfast
+ spanning-tree bpduguard enable
 !
 interface FastEthernet0/4
  description UNUSED - shutdown
@@ -200,17 +231,31 @@ interface Vlan100
 !
 ip default-gateway 10.0.100.1
 !
+banner motd #
+MS VANDAMME - ACCESO RESTRINGIDO. SOLO PERSONAL AUTORIZADO.
+#
 !
 !
 !
+ip access-list standard SSH-ADMIN
+ remark SSH solo desde ADMIN-IT
+ permit 10.0.30.0 0.0.0.255
+ deny any
 line con 0
  logging synchronous
- exec-timeout 0 0
+ login local
+ exec-timeout 5 0
 !
 line vty 0 4
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 line vty 5 15
- login
+ access-class SSH-ADMIN in
+ exec-timeout 5 0
+ login local
+ transport input ssh
 !
 !
 !
