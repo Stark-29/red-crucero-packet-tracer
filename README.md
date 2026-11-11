@@ -387,9 +387,18 @@ En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs d
 
 - Packet Tracer no simula la **latencia ni el ancho de banda variable** de un enlace satelital real.
 - No se simulan los transceivers ni las distancias de fibra más allá del tipo de módulo.
-- **Mejoras previstas:** Wi-Fi con controladora, automatización de respaldos con Python/Netmiko, replicar el bloque de distribución por cubiertas. La QoS de voz se descartó: en Packet Tracer las llamadas no generan paquetes de audio (`show ephone` muestra Tx/Rx Pkts 0), así que no se podía comprobar.
+- **Mejoras previstas:** Wi-Fi con controladora, replicar el bloque de distribución por cubiertas. La QoS de voz se descartó: en Packet Tracer las llamadas no generan paquetes de audio (`show ephone` muestra Tx/Rx Pkts 0), así que no se podía comprobar.
 - Las ACLs son **sin estado**: `tcp established` solo mira las banderas del paquete y no sustituye a un firewall.
 - El router 2911 de Packet Tracer no ofrece `telephony-service` (ni activando la licencia de voz). R-VOZ usa un 2811, que sí lo trae, con puertos FastEthernet.
+
+## Automatización: respaldo de configuraciones
+
+[`scripts/backup_configs.py`](./scripts/backup_configs.py) guarda por SSH (Netmiko) el `running-config` de los 11 equipos listados en [`scripts/inventario.csv`](./scripts/inventario.csv), con los hashes de contraseñas reemplazados por `<REDACTED>`. Debe ejecutarse desde un equipo de la VLAN 30, porque el SSH está restringido a esa VLAN.
+
+[`scripts/limpiar_configs.py`](./scripts/limpiar_configs.py) reemplaza los hashes de los configs exportados de Packet Tracer por `<REDACTED>`.
+
+**Estado:** la lectura del inventario y la redacción de hashes se probaron con una conexión simulada. La conexión SSH real no se ejecutó contra equipos (ni contra Packet Tracer).
+**Uso:** desde la carpeta `scripts/`, `pip install netmiko` y `python backup_configs.py`.
 
 ---
 
@@ -403,6 +412,7 @@ En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs d
 ├── v1-campus-basico/
 ├── configs/          (configuración de los 14 equipos, sin secretos)
 ├── capturas/         (salidas de verificación por fase)
+├── scripts/
 └── crucero-v2.pkt
 ```
 
