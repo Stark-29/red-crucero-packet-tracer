@@ -277,7 +277,7 @@ R-VOZ (10.0.50.5) ofrece telefonía con `telephony-service` sobre SCCP (TCP 2000
 | `ACL-VOICE-IN`: TCP 2000 hacia R-VOZ | Permitido | 82 coincidencias en DIST-SW2 |
 | SSH desde PC-ADMIN a R-VOZ | ✅ | ✅ |
 
-La voz viaja dentro de la VLAN 40 y no cruza ninguna ACL; solo el registro (TCP 2000) llega a R-VOZ por la VLAN 50. En los contadores, la línea de UDP hacia R-VOZ (TFTP) no registró coincidencias y el `deny` final suma 16; causa no determinada.
+En una red real, la voz (RTP) viajaría de teléfono a teléfono dentro de la VLAN 40, y solo el registro y la señalización (TCP 2000) llegarían a R-VOZ por la VLAN 50. En Packet Tracer el audio no se puede comprobar: `show ephone` muestra las llamadas en CONNECTED con 0 paquetes de voz (Tx/Rx Pkts 0).
 
 ![Llamada 1001 a 1002](./capturas/fase3/voz-llamada.png)
 
