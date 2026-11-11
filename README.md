@@ -29,9 +29,9 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 
 ## Tecnologías
 
-**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs · SSH restringido a la VLAN de administración. · SSH restringido · telefonía IP con Cisco CME
+**Implementado:** VLANs y trunking 802.1Q · Rapid-PVST+ · EtherChannel LACP (capa 2 y capa 3) · HSRPv2 · OSPFv2 multiárea · NAT/PAT · port-security · BPDU Guard · DHCP central con relay · DHCP snooping · SSH · ACLs extendidas en las SVIs · SSH restringido a la VLAN de administración · telefonía IP con Cisco CME
 
-**Herramienta:** Cisco Packet Tracer 9.0.1 (las Fases 1 y 2 se construyeron en 9.0.0.0810; ver problema 11). El archivo `.pkt` puede no abrirse en versiones anteriores.
+**Herramienta:** Cisco Packet Tracer 9.0.1 (las Fases 1 y 2 y parte de la 3 se construyeron en 9.0.0.0810; ver problema 11). El archivo `.pkt` puede no abrirse en versiones anteriores.
 
 ---
 
@@ -44,7 +44,7 @@ Los enlaces Core–Distribution usan fibra monomodo (SFP GLC-LH-SMD); el resto u
 | 2 | Capa 3: OSPF multiárea, Edge, NAT/PAT, salida a Internet | ✅ Terminada y verificada |
 | 3 | Servicios: DHCP central, ACLs entre VLANs, SSH, voz IP | ✅ Terminada |
 | 4 | QoS, Wi-Fi, automatización (opcional) | ⏳ Pendiente |
-| 5 | Pruebas de failover y documentación final | ⏳ Pendiente |
+| 5 | Pruebas de failover y documentación final | 🔄 Parcial: failover del enlace satelital y de DIST-SW1 probados; falta DIST-CORE |
 
 ---
 
@@ -125,8 +125,8 @@ Se usan rangos de documentación (RFC 5737).
 - **Router-id fijado manualmente** con la loopback de cada equipo, para que sea predecible y quede documentado.
 - **Seguridad en los puertos de acceso:** PortFast, BPDU Guard y port-security con MAC sticky y `violation restrict` (máximo 3 MAC en los puertos con teléfono y PC).
 - **Ruta por defecto estática flotante en los CORE como respaldo.** Cada CORE tiene `ip route 0.0.0.0 0.0.0.0 <IP de EDGE-R2> 200` (CORE-SW1 → 10.255.1.9, CORE-SW2 → 10.255.1.13). Con distancia administrativa 200 solo entra cuando OSPF (110) no instala la ruta por defecto, y se verificó en la prueba de failover (ver problema 7).
-- **Acceso de gestión seguro.** SSH versión 2 con usuarios locales (`admin`, nivel 15, y `operador`, nivel 1), dominio `ship.local`, contraseñas cifradas, banner de advertencia y bloqueo tras intentos fallidos. Se aplicó a los 11 equipos del barco; SAT-A, SAT-B y SW-ISP simulan el Internet del proveedor y no llevan configuración de acceso.
-- **Credenciales de laboratorio.** Enable y los usuarios usan la misma contraseña (`lab123`) en todos los equipos, solo para este ejercicio. En un entorno real cada equipo tendría credenciales distintas gestionadas de forma centralizada (AAA/RADIUS). Durante el desarrollo, el tiempo de inactividad de consola y vty está desactivado (`exec-timeout 0`) por comodidad.
+- **Acceso de gestión seguro.** SSH versión 2 con usuarios locales (`admin`, nivel 15, y `operador`, nivel 1), dominio `ship.local`, contraseñas cifradas, banner de advertencia y bloqueo tras intentos fallidos (solo en los equipos de capa 3). El SSH solo se acepta desde la VLAN 30 (ADMIN-IT). En los switches de capa 2, `admin` entra en modo usuario y hay que usar `enable` (ver problema 12). Se aplicó a los 11 equipos del barco; SAT-A, SAT-B y SW-ISP simulan el Internet del proveedor y no llevan configuración de acceso.
+- **Credenciales de laboratorio.** Enable y los usuarios usan la misma contraseña (`lab123`) en todos los equipos, solo para este ejercicio. En un entorno real cada equipo tendría credenciales distintas gestionadas de forma centralizada (AAA/RADIUS). El tiempo de inactividad de consola y vty es de 5 minutos (`exec-timeout 5 0`).
 - **DHCP centralizado con relay.** SRV-INFRA entrega las direcciones de todas las VLANs de usuarios mediante `ip helper-address` en las SVIs de **ambos DIST**, de modo que si uno cae, el otro sigue reenviando. Resuelve el problema de pools duplicados de la v1.
 - **DHCP snooping en los switches de acceso**, solo en las VLANs con clientes (ACC-CREW: 10 y 40, ACC-GUEST: 20 y 40, ACC-BRIDGE: 60 y 40). Los uplinks a los DIST son puertos confiables y la opción 82 está desactivada.
 - **ACLs de entrada en las SVIs, idénticas en ambos DIST.** Cada VLAN de usuarios tiene su ACL nombrada (`ACL-GUESTS-IN`, `ACL-CREW-IN`, `ACL-VOICE-IN`, `ACL-BRIDGE-IN`) aplicada en la SVI de los dos DIST, para que el filtrado sea el mismo si uno cae. GUESTS solo llega a DNS e Internet; CREW, a DNS, SRV-WEB e Internet; BRIDGE-OPS, a DNS y SRV-WEB, sin Internet; VOICE, solo a R-VOZ (TCP 2000) y TFTP. ADMIN-IT (VLAN 30) y las VLANs 50 y 100 no llevan ACL.
@@ -195,10 +195,6 @@ Evidencia en [`capturas/fase2/`](./capturas/fase2):
 
 ![Ping durante el failover](./capturas/fase2/failover-ping.png)
 
-**Acceso SSH** (banner de advertencia y sesión iniciada en DIST-SW2, sin restricciones por ahora): evidencia en [`ssh.txt`](./capturas/fase3/ssh.txt) y en la captura siguiente. Pendiente: restringir SSH a la VLAN 30 al terminar las ACLs.
-
-![Acceso SSH a DIST-SW2 sin restricción](./capturas/fase3/ssh-sin-restriccion.png)
-
 ### Fase 3: DHCP snooping
 
 **Prueba del servidor DHCP falso** (un servidor no autorizado en un puerto de usuario de ACC-CREW, VLAN 10):
@@ -249,6 +245,10 @@ Evidencia en [`capturas/fase3/acls.txt`](./capturas/fase3/acls.txt) y [`capturas
 
 ### Fase 3: SSH restringido a ADMIN-IT
 
+**Antes de restringir**, el SSH funcionaba sin filtro de origen (banner de advertencia y sesión iniciada en DIST-SW2). Evidencia en [`ssh.txt`](./capturas/fase3/ssh.txt) y en la captura siguiente.
+
+![Acceso SSH a DIST-SW2 sin restricción](./capturas/fase3/ssh-sin-restriccion.png)
+
 Los 11 equipos con SSH aceptan conexiones solo desde la VLAN 30. Se usa la ACL estándar `SSH-ADMIN` aplicada con `access-class` en las líneas vty 0-4 y 5-15. El mismo bloque se aplicó en los 11 equipos y se probó en tres (DIST-SW1, CORE-SW1 y ACC-CREW).
 
 | Origen | Destino | Esperado | Real |
@@ -267,13 +267,13 @@ Evidencia en [`capturas/fase3/ssh-restringido.txt`](./capturas/fase3/ssh-restrin
 
 ### Fase 3: voz IP (Cisco CME)
 
-R-VOZ (10.0.50.5) ofrece telefonía con `telephony-service` sobre SCCP (TCP 2000). Los 4 teléfonos, en la VLAN 40, reciben IP del DHCP central y se registran solos. Las extensiones se asignan por orden de registro y se ajustaron para que cada área tenga su rango: CREW 1001-1002, GUEST 1101, BRIDGE 2001.
+R-VOZ (10.0.50.5, un router 2811) ofrece telefonía con `telephony-service` sobre SCCP (TCP 2000). Los 4 teléfonos, en la VLAN 40, reciben IP del DHCP central y se registran solos. La asignación inicial de extensiones fue automática (`auto assign`) y después se ajustó para que cada área tenga su rango: CREW 1001-1002, GUEST 1101, BRIDGE 2001. Cada teléfono queda ligado a su extensión por su MAC en la configuración de R-VOZ; si se cambia un número, hay que reiniciar el teléfono para que lo tome.
 
 | Prueba | Esperado | Real |
 |---|---|---|
 | Registro de los 4 teléfonos en R-VOZ | ✅ | ✅ |
 | Llamada 1001 → 1002 | ✅ | ✅ |
-| Extensiones tras cerrar y reabrir el .pkt | Sin cambios | Sin cambios |
+| Extensiones tras guardar el .pkt, cerrar y reabrir | Sin cambios | Sin cambios |
 | `ACL-VOICE-IN`: TCP 2000 hacia R-VOZ | Permitido | 82 coincidencias en DIST-SW2 |
 | SSH desde PC-ADMIN a R-VOZ | ✅ | ✅ |
 
@@ -361,6 +361,14 @@ Evidencia en [`capturas/fase3/voz-ip.txt`](./capturas/fase3/voz-ip.txt).
 **Solución:** tras entrar por SSH a un L2, usar `enable` con el enable secret.
 **Causa:** no determinada (comportamiento de Packet Tracer).
 
+**Evidencia:** [`capturas/fase3/privilege-l2.txt`](./capturas/fase3/privilege-l2.txt).
+
+### 13. SSH no funciona en un router al copiarle la configuración
+**Síntoma:** en R-VOZ (2811 nuevo), `ssh -l admin 10.0.50.5` respondía "Connection closed by foreign host" sin pedir contraseña, aunque el running-config era idéntico al del router anterior.
+**Diagnóstico:** `show ip ssh` indicaba SSH deshabilitado: las claves RSA no viajan en el running-config.
+**Solución:** `ip domain-name ship.local`, `crypto key generate rsa modulus 2048` y `ip ssh version 2`.
+**Causa:** claves RSA ausentes en el equipo nuevo. Evidencia en [`capturas/fase3/voz-ip.txt`](./capturas/fase3/voz-ip.txt).
+
 ## De v1 a v2
 
 La versión 1 (campus básico) funcionaba, pero al revisarla con más criterio aparecieron limitaciones que dieron origen a este rediseño:
@@ -379,7 +387,7 @@ En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs d
 
 - Packet Tracer no simula la **latencia ni el ancho de banda variable** de un enlace satelital real.
 - No se simulan los transceivers ni las distancias de fibra más allá del tipo de módulo.
-- **Mejoras previstas:** QoS en el Edge, Wi-Fi con controladora, automatización de respaldos con Python/Netmiko, replicar el bloque de distribución por cubiertas.
+- **Mejoras previstas:** Wi-Fi con controladora, automatización de respaldos con Python/Netmiko, replicar el bloque de distribución por cubiertas. La QoS de voz se descartó: en Packet Tracer las llamadas no generan paquetes de audio (`show ephone` muestra Tx/Rx Pkts 0), así que no se podía comprobar.
 - Las ACLs son **sin estado**: `tcp established` solo mira las banderas del paquete y no sustituye a un firewall.
 - El router 2911 de Packet Tracer no ofrece `telephony-service` (ni activando la licencia de voz). R-VOZ usa un 2811, que sí lo trae, con puertos FastEthernet.
 
@@ -393,7 +401,7 @@ En la v2, el DHCP pasó a un servidor central, las ACLs se aplican en las SVIs d
 │   ├── topologia.png
 │   └── cableado.md
 ├── v1-campus-basico/
-├── configs/          (running-config de cada equipo, sin secretos)
+├── configs/          (configuración de los 14 equipos, sin secretos)
 ├── capturas/         (salidas de verificación por fase)
 └── crucero-v2.pkt
 ```
